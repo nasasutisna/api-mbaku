@@ -20,4 +20,5 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::group(['prefix' => 'v1'], function () {
     Route::get('dashboard/getBookList','DashboardController@getDataBook');
     Route::get('dashboard/getCategories','DashboardController@getDataCategory');
+    Route::get('book/detail/{id}','BukuController@getDetailBook');
 });

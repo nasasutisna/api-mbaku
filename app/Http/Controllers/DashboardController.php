@@ -49,7 +49,7 @@ class DashboardController extends Controller
         $query->select('kategori.judul_kategori as kategori', 'buku.*');
         $query->join('kategori','kategori.kode_kategori','=','buku.kode_kategori');
 
-        $query = $query->orderBy('ratting', 'desc')->paginate(5);
+        $query = $query->orderBy('ratting', 'desc')->paginate(15);
 
         return response()->json($query);
     }

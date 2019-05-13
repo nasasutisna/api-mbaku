@@ -9,6 +9,8 @@ class DashboardController extends Controller
 {
     //
 
+    var $tbl_ratting = 'ratting';
+
     public function __construct()
     {
         //
@@ -25,13 +27,30 @@ class DashboardController extends Controller
 
     public function getDataBook(Request $request)
     {
-        $req = $request->all();
-        $query = $this->buku;
+        $arrCategory = [];
+        $pageIndex = $request->input('pageIndex');
+        $pageSize = $request->input('pageSize');
+        $sortBy = $request->input('sortBy');
+
         $filter_category = json_decode($request->input('category'), true);
         $keyword = $request->input('keyword');
+        $skip = ($pageIndex == 0) ?  $pageIndex : ($pageIndex  * $pageSize);
 
-        $arrCategory = [];
+        $query = $this->buku;
+        $query->select('kategori.judul_kategori as kategori', 'buku.*');
+        $query->join('kategori','kategori.kode_kategori','=','buku.kode_kategori');
 
+        $count_page = DB::table('buku')->count();
+
+        // sort by stok
+        if($sortBy != 'undefined' && $sortBy != ''){
+            $sortBy = explode('|',$sortBy);
+            if($sortBy[0] == 'stok'){
+                $query = $query->orderBy($sortBy[0],$sortBy[1]);
+            }
+        }
+
+        // filter category
         if ($filter_category != '' && count($filter_category) > 0) {
             foreach ($filter_category as $key => $value) {
                 $fil_category = explode('|', $value);
@@ -39,24 +58,110 @@ class DashboardController extends Controller
                 $arrCategory[] = $fil_category;
             }
            $query = $query->whereIn('buku.kode_kategori', $arrCategory);
+           $count_page = count($query->get());
         }
 
-        if($keyword != ''){
+        // searching
+        if($keyword != '' && $keyword != 'undefined'){
             $query = $query->where('buku.judul', 'like', '%'.$keyword.'%');
             $query = $query->orWhere('buku.pengarang', 'like', '%'.$keyword.'%');
+            $count_page = count($query->get());
         }
 
-        $query->select('kategori.judul_kategori as kategori', 'buku.*');
-        $query->join('kategori','kategori.kode_kategori','=','buku.kode_kategori');
+        $query->skip($skip);
+        $query->limit($pageSize);
 
-        $query = $query->orderBy('ratting', 'desc')->paginate(15);
+        $query = $query->get();
+        $query = json_decode(json_encode($query),true);
 
-        return response()->json($query);
+        // get ratting from table ratting
+        foreach ($query as $key => $value) {
+            $ratting = 0;
+            $getRate = DB::table($this->tbl_ratting)
+            ->where('kode_buku',$value['kode_buku'])
+            ->sum('rate');
+
+            if($getRate){
+                $ratting = $getRate;
+            }
+
+            $query[$key]['ratting'] = $ratting;
+        }
+
+        // sort by ratting
+        if($sortBy != 'undefined' && $sortBy != ''){
+            if($sortBy[0] == 'ratting'){
+                $sort_col = array();
+                foreach ($query as $key=> $row) {
+                    $sort_col[$key] = $row['ratting'];
+                }
+
+                if($sortBy[1] == 'asc'){
+                    array_multisort($sort_col, SORT_ASC,$query);
+                }
+                else{
+                    array_multisort($sort_col, SORT_DESC,$query);
+                }
+            }
+        }
+
+        $data = array(
+            'data' => $query,
+            'limit' => $pageSize + 0,
+            'page' => $pageIndex + 1,
+            'totalPage' => $count_page
+        );
+
+        return response()->json($data);
+    }
+
+    public function array_sort_by_column($arr, $col, $dir = SORT_ASC) {
+        $sort_col = array();
+        foreach ($arr as $key=> $row) {
+            $sort_col[$key] = $row[$col];
+        }
+
+        array_multisort($sort_col, $dir, $arr);
     }
 
     public function getDataCategory()
     {
-        $data = $this->category->orderBy('judul_kategori', 'desc')->get();
+        $data = $this->category->orderBy('judul_kategori', 'asc')->get();
         return response()->json($data);
+    }
+
+    function array_sort($array, $on, $order='desc'){
+
+        $new_array = array();
+        $sortable_array = array();
+
+        if (count($array) > 0) {
+            foreach ($array as $k => $v) {
+                if (is_array($v)) {
+                    foreach ($v as $k2 => $v2) {
+                        if ($k2 == $on) {
+                            $sortable_array[$k] = $v2;
+                        }
+                    }
+                } else {
+                    $sortable_array[$k] = $v;
+                }
+            }
+
+            switch ($order) {
+                case 'asc':
+                    sort($sortable_array);
+                    break;
+                case 'desc':
+                    rsort($sortable_array);
+                    break;
+            }
+
+            foreach ($sortable_array as $k => $v) {
+                $new_array[$k] = $array[$k];
+            }
+        }
+
+        return array_values($new_array);
     }
 }

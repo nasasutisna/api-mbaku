@@ -38,16 +38,16 @@ class DashboardController extends Controller
 
         $query = $this->buku;
         $query->select('kategori.judul_kategori as kategori', 'buku.*');
-        $query->join('kategori','kategori.kode_kategori','=','buku.kode_kategori');
+        $query->selectRaw('COALESCE((SELECT SUM(ratting.rate) FROM ratting where ratting.kode_buku = buku.kode_buku),0) as ratting');
+        $query->leftjoin('kategori','kategori.kode_kategori','=','buku.kode_kategori');
+        $query->leftjoin('ratting','ratting.kode_buku','=','buku.kode_buku');
 
         $count_page = DB::table('buku')->count();
 
         // sort by stok
         if($sortBy != 'undefined' && $sortBy != ''){
             $sortBy = explode('|',$sortBy);
-            if($sortBy[0] == 'stok'){
-                $query = $query->orderBy($sortBy[0],$sortBy[1]);
-            }
+            $query = $query->orderBy($sortBy[0],$sortBy[1]);
         }
 
         // filter category
@@ -75,35 +75,36 @@ class DashboardController extends Controller
         $query = json_decode(json_encode($query),true);
 
         // get ratting from table ratting
-        foreach ($query as $key => $value) {
-            $ratting = 0;
-            $getRate = DB::table($this->tbl_ratting)
-            ->where('kode_buku',$value['kode_buku'])
-            ->sum('rate');
+        // foreach ($query as $key => $value) {
+        //     $ratting = 0;
+        //     $getRate = DB::table($this->tbl_ratting)
+        //     ->where('kode_buku',$value['kode_buku'])
+        //     ->sum('rate');
 
-            if($getRate){
-                $ratting = $getRate;
-            }
+        //     if($getRate){
+        //         $ratting = $getRate;
+        //     }
 
-            $query[$key]['ratting'] = $ratting;
-        }
+        //     $query[$key]['ratting'] = $ratting;
+        // }
 
         // sort by ratting
-        if($sortBy != 'undefined' && $sortBy != ''){
-            if($sortBy[0] == 'ratting'){
-                $sort_col = array();
-                foreach ($query as $key=> $row) {
-                    $sort_col[$key] = $row['ratting'];
-                }
+        // if($sortBy != 'undefined' && $sortBy != ''){
+        //     if($sortBy[0] == 'ratting'){
 
-                if($sortBy[1] == 'asc'){
-                    array_multisort($sort_col, SORT_ASC,$query);
-                }
-                else{
-                    array_multisort($sort_col, SORT_DESC,$query);
-                }
-            }
-        }
+        //         $sort_col = array();
+        //         foreach ($query as $key=> $row) {
+        //             $sort_col[$key] = $row['ratting'];
+        //         }
+
+        //         if($sortBy[1] == 'asc'){
+        //             array_multisort($sort_col, SORT_ASC,$query);
+        //         }
+        //         else{
+        //             array_multisort($sort_col, SORT_DESC,$query);
+        //         }
+        //     }
+        // }
 
         $data = array(
             'data' => $query,

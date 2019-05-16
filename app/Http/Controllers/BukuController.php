@@ -113,8 +113,13 @@ class BukuController extends Controller
     public function getPopularBook()
     {
         $query = $this->buku;
+        $query->select('buku.*','kategori.judul_kategori');
+        $query->selectRaw('COALESCE((SELECT SUM(ratting.rate) FROM ratting where ratting.kode_buku = buku.kode_buku),0) as ratting');
         $query->limit(10);
         $query->leftjoin('kategori','kategori.kode_kategori','=','buku.kode_kategori');
+        $query->leftjoin('ratting','ratting.kode_buku','=','buku.kode_buku');
+        $query = $query->orderBy('ratting','desc');
+
         $query = $query->get();
 
         $arrPage = [];

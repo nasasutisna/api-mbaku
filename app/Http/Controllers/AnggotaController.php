@@ -71,16 +71,25 @@ class AnggotaController extends Controller
         $results = array();
         $data = array();
 
+        $photo = $request->file("photo");
+        if($photo){
+            $filename = $photo->getClientOriginalName();
+            $storePhoto = $photo->storeAs('public/profile', $filename);
+        }
+
+        $serial_id = $request->input('serial_id');
         $kode_anggota = $request->input('kode_anggota');
         $nama_lengkap = $request->input('nama_lengkap');
         $email = $request->input('email');
         $alamat = $request->input('alamat');
+        $status = $request->input('status');
         $nomor_handphone = $request->input('nomor_handphone');
 
         // print_r($request->all());
         $anggota = DB::table('anggota');
 
-            $msg = "Berhasil diperbarui!";
+            $msg = ($serial_id) ? "Berhasil diperbarui!" : "Berhasil disimpan!" ;
+
             $record = array(
                 'kode_anggota' => $kode_anggota,
                 'nama_lengkap' => $nama_lengkap,
@@ -89,11 +98,19 @@ class AnggotaController extends Controller
                 'alamat' => $alamat,
             );
 
-            $save_anggota = $anggota->where('kode_anggota',$kode_anggota)->update($record);
+            if(isset($status)){
+                $record['status'] = $status;
+            }
 
-            if(!$save_anggota){
-                $msg = "gagal diperbarui!";
-                $status = 500;
+            if($photo){
+                $record['photo'] = 'storage/app/public/profile/'.$filename;
+            }
+
+            if($serial_id == 0 || $serial_id == 'undefined'){
+                $save_anggota = $anggota->insert($record); // create new
+            }
+            else{
+                $save_anggota = $anggota->where('serial_id',$serial_id)->orWhere('kode_anggota',$kode_anggota)->update($record); // update
             }
 
             $results = array (
@@ -101,7 +118,7 @@ class AnggotaController extends Controller
                 'data' => $save_anggota
             );
 
-            return response()->json($results,$status);
+            return response()->json($results);
 
     }
 
@@ -153,10 +170,55 @@ class AnggotaController extends Controller
         return response()->json($data,$status);
     }
 
-    public function getDetail($kode_anggota){
+    public function getDetail($id){
         $data = [];
         $anggota = DB::table($this->tbl_anggota);
-        $data = $anggota->where('kode_anggota',$kode_anggota)->first();
+        $data = $anggota->where('serial_id',$id)->orWhere('kode_anggota',$id)->first();
         return response()->json($data, 200);
+    }
+
+    public function delete($id){
+        $anggota = DB::table($this->tbl_anggota);
+        $data = $anggota->where('serial_id',$id)->delete();
+        return response()->json($data, 200);
+    }
+
+    public function getDataAnggota(Request $request)
+    {
+        $arrCategory = [];
+        $pageIndex = $request->input('pageIndex');
+        $pageSize = $request->input('pageSize');
+        $sortBy = $request->input('sortBy');
+
+        $filter_category = json_decode($request->input('category'), true);
+        $keyword = $request->input('keyword');
+        $skip = ($pageIndex == 0) ?  $pageIndex : ($pageIndex  * $pageSize);
+
+        $query = DB::table('anggota');
+
+        $count_page = $query->count();
+
+        // searching
+        if($keyword != '' && $keyword != 'undefined'){
+            $query = $query->where('nama_lengkap', 'like', '%'.$keyword.'%');
+            $query = $query->orWhere('kode_anggota', 'like', '%'.$keyword.'%');
+            $count_page = count($query->get());
+        }
+
+        $query->skip($skip);
+        $query->limit($pageSize);
+        $query->orderBy('serial_id','desc');
+
+        $query = $query->get();
+        $query = json_decode(json_encode($query),true);
+
+        $data = array(
+            'data' => $query,
+            'limit' => $pageSize + 0,
+            'page' => $pageIndex + 1,
+            'totalPage' => $count_page
+        );
+
+        return response()->json($data);
     }
 }

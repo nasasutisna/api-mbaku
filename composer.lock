@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1b220dba5b55a4226fe5edadecefbb7f",
+    "content-hash": "657ab4069cd7c20cf42488a5a5ab3fdf",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -1220,6 +1220,69 @@
                 "storage"
             ],
             "time": "2019-03-30T13:22:34+00:00"
+        },
+        {
+            "name": "marprinhm/midtrans",
+            "version": "v0.3.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/marprin/laravel-midtrans.git",
+                "reference": "fbce96a8b10f489420a7e995ecbcb0e3b1eab4fe"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/marprin/laravel-midtrans/zipball/fbce96a8b10f489420a7e995ecbcb0e3b1eab4fe",
+                "reference": "fbce96a8b10f489420a7e995ecbcb0e3b1eab4fe",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^6.3",
+                "illuminate/support": "5.1.x|5.2.x|5.3.x|5.4.x|5.5.x|5.6.x|5.7.x|5.8.x",
+                "php": ">=5.6.4"
+            },
+            "require-dev": {
+                "mockery/mockery": "~0.9",
+                "phpunit/phpunit": "~4.0|~5.0",
+                "vlucas/phpdotenv": "^2.4"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "0.3.4-dev"
+                },
+                "laravel": {
+                    "providers": [
+                        "Marprinhm\\Midtrans\\MidtransServiceProvider"
+                    ],
+                    "aliases": {
+                        "Midtrans": "Marprinhm\\Midtrans\\Facades\\Midtrans",
+                        "Veritrans": "Marprinhm\\Midtrans\\Facades\\Veritrans"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Marprinhm\\Midtrans\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Marprin Hennes Muchri",
+                    "email": "marprin93@gmail.com"
+                }
+            ],
+            "description": "A Midtrans Payment Wrapper for Laravel",
+            "keywords": [
+                "laravel",
+                "midtrans",
+                "payment",
+                "veritrans"
+            ],
+            "time": "2019-03-01T08:08:24+00:00"
         },
         {
             "name": "monolog/monolog",

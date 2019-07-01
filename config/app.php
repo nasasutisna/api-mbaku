@@ -162,7 +162,7 @@ return [
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
         Barryvdh\Cors\ServiceProvider::class,
-
+        Marprinhm\Midtrans\MidtransServiceProvider::class,
         /*
          * Package Service Providers...
          */
@@ -224,6 +224,8 @@ return [
         'URL' => Illuminate\Support\Facades\URL::class,
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
+        'Midtrans' => Marprinhm\Midtrans\Facades\Midtrans::class,
+        'Veritrans' => Marprinhm\Midtrans\Facades\Veritrans::class,
 
     ],
 

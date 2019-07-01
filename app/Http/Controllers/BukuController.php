@@ -9,8 +9,8 @@ use Storage;
 class BukuController extends Controller
 {
     //
-    var $tbl_buku = 'buku';
-    var $tbl_ratting = 'ratting';
+    public $tbl_buku = 'buku';
+    public $tbl_ratting = 'ratting';
     public function __construct()
     {
         //
@@ -25,10 +25,10 @@ class BukuController extends Controller
         $ratting = 0;
 
         $getRate = DB::table($this->tbl_ratting)
-                  ->where('kode_buku',$kode_buku)
-                  ->sum('rate');
+            ->where('kode_buku', $kode_buku)
+            ->sum('rate');
 
-        if($getRate){
+        if ($getRate) {
             $ratting = $getRate;
         }
 
@@ -38,7 +38,7 @@ class BukuController extends Controller
         $query->where('kode_buku', $kode_buku);
 
         $query = $query->first();
-        $data = json_decode(json_encode($query),true);
+        $data = json_decode(json_encode($query), true);
         $data['ratting'] = $ratting;
 
         return response()->json($data);
@@ -97,14 +97,14 @@ class BukuController extends Controller
         $kode_buku = $request->input('kode_buku');
         $rate = 0;
 
-        $query = DB::table($this->tbl_ratting)->where('kode_anggota','=',$kode_anggota)->where('kode_buku','=',$kode_buku)->first();
+        $query = DB::table($this->tbl_ratting)->where('kode_anggota', '=', $kode_anggota)->where('kode_buku', '=', $kode_buku)->first();
 
-        if($query) {
+        if ($query) {
             $rate = $query->rate;
         }
 
         $data = array(
-            'myRate' => $rate
+            'myRate' => $rate,
         );
 
         return response()->json($data);
@@ -113,12 +113,11 @@ class BukuController extends Controller
     public function getPopularBook()
     {
         $query = $this->buku;
-        $query->select('buku.*','kategori.judul_kategori');
+        $query->select('buku.*', 'kategori.judul_kategori');
         $query->selectRaw('COALESCE((SELECT SUM(ratting.rate) FROM ratting where ratting.kode_buku = buku.kode_buku),0) as ratting');
         $query->limit(10);
-        $query->leftjoin('kategori','kategori.kode_kategori','=','buku.kode_kategori');
-        $query->leftjoin('ratting','ratting.kode_buku','=','buku.kode_buku');
-        $query = $query->orderBy('ratting','desc');
+        $query->leftjoin('kategori', 'kategori.kode_kategori', '=', 'buku.kode_kategori');
+        $query = $query->orderBy('ratting', 'desc');
 
         $query = $query->get();
 
@@ -148,23 +147,35 @@ class BukuController extends Controller
         return response()->json($arrPage);
     }
 
-    public function store(Request $request){
+    public function store(Request $request)
+    {
         $msg = '';
         $status = '';
+        $imagePath= '';
+        $ebookName= '';
 
         $image = $request->file('path_image');
-        $imageName = $image->getClientOriginalName();
-        $imagePath = 'storage/app/public/coverbook/'.$imageName;
-        $store = $image->storeAs('public/coverbook',$imageName);
+        if($image){
+            $imageName = $image->getClientOriginalName();
+            ($imagePath) ? $imagePath :  $image  = 'storage/app/public/coverbook/' . $imageName;
+            $store = $image->storeAs('public/coverbook', $imageName);
+        }
 
         $ebook = $request->file('ebook');
-        $ebookName = $ebook->getClientOriginalName();
-        $storeEbook = $ebook->storeAs('public/ebook',$ebookName);
+        if ($ebook) {
+            $ebookName = $ebook->getClientOriginalName();
+            $storeEbook = $ebook->storeAs('public/ebook', $ebookName);
+        }
 
+        // check action add or edit true if its edit
+        $isUpdate = $request->input('isUpdate');
+
+        $serial_id = $request->input('serial_id');
         $kode_buku = $request->input('kode_buku');
         $judul = $request->input('judul');
         $kode_kategori = $request->input('kode_kategori');
         $pengarang = $request->input('pengarang');
+        $sinopsis = $request->input('sinopsis');
         $penerbit = $request->input('penerbit');
         $tahun_terbit = $request->input('tahun_terbit');
         $stok = $request->input('stok');
@@ -175,69 +186,79 @@ class BukuController extends Controller
             'judul' => $judul,
             'kode_kategori' => $kode_kategori,
             'pengarang' => $pengarang,
+            'sinopsis' => $sinopsis,
             'penerbit' => $penerbit,
             'tahun_terbit' => $tahun_terbit,
             'stok' => $stok,
-            'jumlah' => $jumlah,
-            'path_image' => $imagePath,
-            'ebook' => $ebookName,
+            'jumlah' => $jumlah
         );
 
-        // print_r($request->all());
-        // exit;
-
-        $query = DB::table($this->tbl_buku)->insert($arrData);
-
-        if($query){
-            $msg = 'Data berhasil disimpan';
-            $status = 200;
-        }else{
-            $status = 500;
-            $msg = 'gagal menyimpan data';
+        if($imagePath){
+            $arrData['path_image'] = $imagePath;
         }
 
+        if($ebookName){
+            $arrData['ebook'] = $ebookName;
+        }
+
+        if ($isUpdate) {
+            $query = DB::table($this->tbl_buku)->where('serial_id', $serial_id)->update($arrData);
+
+        } else {
+            $query = DB::table($this->tbl_buku)->insert($arrData);
+        }
+
+            $msg = 'Data berhasil disimpan';
+            $status = 200;
+
         $data = array(
-            'msg' => $msg
+            'msg' => $msg,
         );
 
-        return response()->json($data,$status);
+        return response()->json($data, $status);
     }
 
-    public function addRatting(Request $request){
+    public function addRatting(Request $request)
+    {
         $kode_anggota = $request->input('kode_anggota');
         $kode_buku = $request->input('kode_buku');
         $ratting = $request->input('ratting');
 
-        $check = DB::table($this->tbl_ratting)->where('kode_anggota','=',$kode_anggota)->where('kode_buku','=',$kode_buku)->first();
+        $check = DB::table($this->tbl_ratting)->where('kode_anggota', '=', $kode_anggota)->where('kode_buku', '=', $kode_buku)->first();
 
-        $content = array (
+        $content = array(
             'kode_anggota' => $kode_anggota,
             'kode_buku' => $kode_buku,
             'rate' => $ratting,
         );
 
-        if($check){
+        if ($check) {
             $query = DB::table($this->tbl_ratting)
-                     ->where('kode_anggota',$kode_anggota)
-                     ->where('kode_buku',$kode_buku)
-                     ->update(['rate' => $ratting]);
-        }
-        else{
+                ->where('kode_anggota', $kode_anggota)
+                ->where('kode_buku', $kode_buku)
+                ->update(['rate' => $ratting]);
+        } else {
             $query = DB::table($this->tbl_ratting)->insert($content);
         }
 
-        if($query){
+        if ($query) {
             $msg = 'Data berhasil disimpan';
             $status = 200;
-        }else{
+        } else {
             $status = 500;
             $msg = 'gagal';
         }
 
         $data = array(
-            'msg' => $msg
+            'msg' => $msg,
         );
 
-        return response()->json($data,$status);
+        return response()->json($data, $status);
+    }
+
+    public function delete($id){
+        $anggota = DB::table($this->tbl_buku);
+        $data = $anggota->where('serial_id',$id)->delete();
+        return response()->json($data, 200);
     }
 }

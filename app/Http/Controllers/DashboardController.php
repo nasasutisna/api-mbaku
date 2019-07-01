@@ -31,6 +31,7 @@ class DashboardController extends Controller
         $pageIndex = $request->input('pageIndex');
         $pageSize = $request->input('pageSize');
         $sortBy = $request->input('sortBy');
+        $filterEbook = $request->input('filterEbook');
 
         $filter_category = json_decode($request->input('category'), true);
         $keyword = $request->input('keyword');
@@ -40,7 +41,6 @@ class DashboardController extends Controller
         $query->select('kategori.judul_kategori as kategori', 'buku.*');
         $query->selectRaw('COALESCE((SELECT SUM(ratting.rate) FROM ratting where ratting.kode_buku = buku.kode_buku),0) as ratting');
         $query->leftjoin('kategori','kategori.kode_kategori','=','buku.kode_kategori');
-        $query->leftjoin('ratting','ratting.kode_buku','=','buku.kode_buku');
 
         $count_page = DB::table('buku')->count();
 
@@ -48,6 +48,7 @@ class DashboardController extends Controller
         if($sortBy != 'undefined' && $sortBy != ''){
             $sortBy = explode('|',$sortBy);
             $query = $query->orderBy($sortBy[0],$sortBy[1]);
+            // $query = $query->groupBy('buku.serial_id');
         }
 
         // filter category
@@ -59,6 +60,12 @@ class DashboardController extends Controller
             }
            $query = $query->whereIn('buku.kode_kategori', $arrCategory);
            $count_page = count($query->get());
+        }
+
+
+        if($filterEbook) {
+            $query = $query->where('ebook','!=','');
+            $count_page = count($query->get());
         }
 
         // searching
@@ -73,38 +80,6 @@ class DashboardController extends Controller
 
         $query = $query->get();
         $query = json_decode(json_encode($query),true);
-
-        // get ratting from table ratting
-        // foreach ($query as $key => $value) {
-        //     $ratting = 0;
-        //     $getRate = DB::table($this->tbl_ratting)
-        //     ->where('kode_buku',$value['kode_buku'])
-        //     ->sum('rate');
-
-        //     if($getRate){
-        //         $ratting = $getRate;
-        //     }
-
-        //     $query[$key]['ratting'] = $ratting;
-        // }
-
-        // sort by ratting
-        // if($sortBy != 'undefined' && $sortBy != ''){
-        //     if($sortBy[0] == 'ratting'){
-
-        //         $sort_col = array();
-        //         foreach ($query as $key=> $row) {
-        //             $sort_col[$key] = $row['ratting'];
-        //         }
-
-        //         if($sortBy[1] == 'asc'){
-        //             array_multisort($sort_col, SORT_ASC,$query);
-        //         }
-        //         else{
-        //             array_multisort($sort_col, SORT_DESC,$query);
-        //         }
-        //     }
-        // }
 
         $data = array(
             'data' => $query,
@@ -165,4 +140,23 @@ class DashboardController extends Controller
 
         return array_values($new_array);
     }
+
+    ##################################### DASHBOARD ADMIN #######################################################
+    function dashboardAdmin(){
+        $data = array();
+        $buku = DB::table('buku')->selectRaw("sum(jumlah) as jumlah, sum(stok) as stok")->first();
+        $anggota = DB::table('anggota')->count();
+        // $pengguna = DB::table('users')->count();
+
+        $month = date('m');
+        $totalPeminjaman =  DB::table('peminjaman')->selectRaw("count(kode_peminjaman) as total")->whereMonth('tanggal_pinjam',$month)->first();
+
+        $data['buku'] = $buku;
+        $data['anggota'] = $anggota;
+        $data['totalPeminjaman'] = $totalPeminjaman;
+
+        return response()->json($data, 200);
+
+    }
+
 }

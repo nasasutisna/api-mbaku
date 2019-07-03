@@ -157,7 +157,7 @@ class BukuController extends Controller
         $image = $request->file('path_image');
         if($image){
             $imageName = $image->getClientOriginalName();
-            ($imagePath) ? $imagePath :  $image  = 'storage/app/public/coverbook/' . $imageName;
+            $imagePath = 'storage/app/public/coverbook/' . $imageName;
             $store = $image->storeAs('public/coverbook', $imageName);
         }
 

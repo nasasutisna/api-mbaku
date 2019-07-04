@@ -180,6 +180,7 @@ class BukuController extends Controller
         $tahun_terbit = $request->input('tahun_terbit');
         $stok = $request->input('stok');
         $jumlah = $request->input('jumlah');
+        $harga_ebook = $request->input('harga_ebook');
 
         $arrData = array(
             'kode_buku' => $kode_buku,
@@ -190,6 +191,7 @@ class BukuController extends Controller
             'penerbit' => $penerbit,
             'tahun_terbit' => $tahun_terbit,
             'stok' => $stok,
+            'harga_ebook' => $harga_ebook,
             'jumlah' => $jumlah
         );
 

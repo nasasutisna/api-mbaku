@@ -110,7 +110,11 @@ class AnggotaController extends Controller
                 $save_anggota = $anggota->insert($record); // create new
             }
             else{
+                $getUser = DB::table('anggota')->where('kode_anggota',$kode_anggota)->first(); // update
+                $old_email = $getUser->email;
+                $update_user = DB::table('users')->Where('email',$old_email)->update(['email' => $email]);
                 $save_anggota = $anggota->where('serial_id',$serial_id)->orWhere('kode_anggota',$kode_anggota)->update($record); // update
+
             }
 
             $results = array (

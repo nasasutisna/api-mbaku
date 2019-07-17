@@ -98,7 +98,7 @@ class AnggotaController extends Controller
                 'alamat' => $alamat,
             );
 
-            if(isset($status)){
+            if($status != 'undefined' && $status == ''){
                 $record['status'] = $status;
             }
 

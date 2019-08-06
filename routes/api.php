@@ -22,6 +22,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::get('book/getBookList','BookController@getBookList');
     Route::get('ebook/getEbookList','EbookController@getEbookList');
     Route::post('login','LoginController@processLogin');
+    Route::get('login/generateToken','LoginController@generateToken');
 });
 
 

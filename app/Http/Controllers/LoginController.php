@@ -75,7 +75,8 @@ class LoginController extends Controller
     }
 
     public function generateToken(){
-        $var = 'MBAKU-'.Str::random(32);
-        return $var;
+        $token = 'MBAKU-'.hash('sha256', Str::random(32));
+        return $token;
     }
+
 }

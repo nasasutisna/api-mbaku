@@ -74,4 +74,31 @@ class EbookController extends Controller
 
         return response()->json($data);
     }
+
+    public function getDetailEbook($id)
+    {
+        $ebookID = $id;
+        $feedBack = 0;
+
+        $getRate = DB::table($this->tbl_feedback)
+            ->where('feedbackID', $ebookID)
+            ->sum('feedBackValue');
+
+        if ($getRate) {
+            $feedBack = $getRate;
+        }
+
+        $query = $this->ebook;
+        $query->select('ebook.*', 'category.categoryTitle', 'library.libraryName', 'university.universityName' );
+        $query->leftjoin('category', 'category.categoryID', '=', 'ebook.categoryID');
+        $query->leftjoin('library', 'library.libraryID', '=', 'ebook.libraryID');
+        $query->leftjoin('university', 'university.universityID', '=', 'library.universityID');
+        $query->where('ebookID', $ebookID);
+
+        $query = $query->first();
+        $data = json_decode(json_encode($query), true);
+        $data['feedBack'] = $feedBack;
+
+        return response()->json($data);
+    }
 }

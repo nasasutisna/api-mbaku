@@ -6,50 +6,114 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Storage;
 
-class BukuController extends Controller
+class BookController extends Controller
 {
     //
-    public $tbl_buku = 'buku';
-    public $tbl_ratting = 'ratting';
+    public $tbl_book = 'book';
+    public $tbl_feedback = 'feedback';
+
     public function __construct()
     {
-        //
+        $this->category = DB::table('category');
+        $this->book = DB::table('book');
+    }
 
-        $this->category = DB::table('kategori');
-        $this->buku = DB::table('buku');
+    public function getBookList(Request $request)
+    {
+        $arrCategory = [];
+        $pageIndex = $request->input('pageIndex');
+        $pageSize = $request->input('pageSize');
+        $sortBy = $request->input('sortBy');
+        $filterEbook = $request->input('filterEbook');
+
+        $filter_category = json_decode($request->input('category'), true);
+        $keyword = $request->input('keyword');
+        $skip = ($pageIndex == 0) ?  $pageIndex : ($pageIndex  * $pageSize);
+
+        $query = $this->book;
+        $query->select('category.categoryTitle as category', 'book.*');
+        $query->selectRaw('COALESCE((SELECT SUM(feedback.feedbackValue) FROM feedback where feedback.ebookID = book.bookID),0) as feedback');
+        $query->leftjoin('category','category.categoryID','=','book.categoryID');
+
+        $count_page = DB::table('book')->count();
+
+        // sort by stok
+        if($sortBy != 'undefined' && $sortBy != ''){
+            $sortBy = explode('|',$sortBy);
+            $query = $query->orderBy($sortBy[0],$sortBy[1]);
+        }
+
+        // filter category
+        if ($filter_category != '' && count($filter_category) > 0) {
+            foreach ($filter_category as $key => $value) {
+                $fil_category = explode('|', $value);
+                $fil_category = $fil_category[0];
+                $arrCategory[] = $fil_category;
+            }
+           $query = $query->whereIn('book.categoryID', $arrCategory);
+           $count_page = count($query->get());
+        }
+
+
+        if($filterEbook) {
+            $query = $query->where('ebook','!=','');
+            $count_page = count($query->get());
+        }
+
+        // searching
+        if($keyword != '' && $keyword != 'undefined'){
+            $query = $query->where('book.bookTitle', 'like', '%'.$keyword.'%');
+            $query = $query->orWhere('book.bookWriter', 'like', '%'.$keyword.'%');
+            $count_page = count($query->get());
+        }
+
+        $query->skip($skip);
+        $query->limit($pageSize);
+
+        $query = $query->get();
+        $query = json_decode(json_encode($query),true);
+
+        $data = array(
+            'data' => $query,
+            'limit' => $pageSize + 0,
+            'page' => $pageIndex + 1,
+            'totalPage' => $count_page
+        );
+
+        return response()->json($data);
     }
 
     public function getDetailBook(Request $request, $id)
     {
-        $kode_buku = $id;
-        $ratting = 0;
+        $bookID = $id;
+        $feedBack = 0;
 
-        $getRate = DB::table($this->tbl_ratting)
-            ->where('kode_buku', $kode_buku)
-            ->sum('rate');
+        $getRate = DB::table($this->tbl_feedback)
+            ->where('bookID', $bookID)
+            ->sum('feedBackValue');
 
         if ($getRate) {
-            $ratting = $getRate;
+            $feedBack = $getRate;
         }
 
-        $query = $this->buku;
-        $query->select('kategori.judul_kategori as kategori', 'buku.*');
-        $query->leftjoin('kategori', 'kategori.kode_kategori', '=', 'buku.kode_kategori');
-        $query->where('kode_buku', $kode_buku);
+        $query = $this->book;
+        $query->select('category.categoryTitle', 'book.*');
+        $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
+        $query->where('bookID', $bookID);
 
         $query = $query->first();
         $data = json_decode(json_encode($query), true);
-        $data['ratting'] = $ratting;
+        $data['feedBack'] = $feedBack;
 
         return response()->json($data);
     }
 
     public function getBookByCategory(Request $request, $id)
     {
-        $kode_kategori = $id;
+        $categoryID = $id;
 
-        $query = $this->buku;
-        $query->where('kode_kategori', $kode_kategori);
+        $query = $this->book;
+        $query->where('categoryID', $categoryID);
         $query->limit(40);
         $query = $query->get();
 
@@ -58,8 +122,6 @@ class BukuController extends Controller
         $no = 0;
         $key = 0;
 
-        // print_r(count($query));
-        // exit;
         if ($query) {
             foreach ($query as $value) {
                 if (count($arrTemp) > 0) {
@@ -85,7 +147,6 @@ class BukuController extends Controller
     public function getEbook(Request $request)
     {
         $filename = $request->input('filename');
-        // $check = Storage::exists(public_path().'/coverbook/php komplet.jpg');
         $file = Storage::disk('public')->path('ebook/' . $filename);
 
         return response()->download($file);
@@ -93,11 +154,11 @@ class BukuController extends Controller
 
     public function checkMyRate(Request $request)
     {
-        $kode_anggota = $request->input('kode_anggota');
-        $kode_buku = $request->input('kode_buku');
+        $memberID = $request->input('memberID');
+        $bookID = $request->input('bookID');
         $rate = 0;
 
-        $query = DB::table($this->tbl_ratting)->where('kode_anggota', '=', $kode_anggota)->where('kode_buku', '=', $kode_buku)->first();
+        $query = DB::table($this->tbl_feedback)->where('memberID', '=', $memberID)->where('bookID', '=', $bookID)->first();
 
         if ($query) {
             $rate = $query->rate;
@@ -112,12 +173,12 @@ class BukuController extends Controller
 
     public function getPopularBook()
     {
-        $query = $this->buku;
-        $query->select('buku.*', 'kategori.judul_kategori');
-        $query->selectRaw('COALESCE((SELECT SUM(ratting.rate) FROM ratting where ratting.kode_buku = buku.kode_buku),0) as ratting');
+        $query = $this->book;
+        $query->select('book.*', 'category.categoryTitle');
+        $query->selectRaw('COALESCE((SELECT SUM(feedback.rate) FROM feedback where feedback.ebookID = book.bookID),0) as feedback');
         $query->limit(10);
-        $query->leftjoin('kategori', 'kategori.kode_kategori', '=', 'buku.kode_kategori');
-        $query = $query->orderBy('ratting', 'desc');
+        $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
+        $query = $query->orderBy('feedback', 'desc');
 
         $query = $query->get();
 
@@ -171,9 +232,9 @@ class BukuController extends Controller
         $isUpdate = $request->input('isUpdate');
 
         $serial_id = $request->input('serial_id');
-        $kode_buku = $request->input('kode_buku');
+        $bookID = $request->input('bookID');
         $judul = $request->input('judul');
-        $kode_kategori = $request->input('kode_kategori');
+        $categoryID = $request->input('categoryID');
         $pengarang = $request->input('pengarang');
         $sinopsis = $request->input('sinopsis');
         $penerbit = $request->input('penerbit');
@@ -183,9 +244,9 @@ class BukuController extends Controller
         $harga_ebook = $request->input('harga_ebook');
 
         $arrData = array(
-            'kode_buku' => $kode_buku,
+            'bookID' => $bookID,
             'judul' => $judul,
-            'kode_kategori' => $kode_kategori,
+            'categoryID' => $categoryID,
             'pengarang' => $pengarang,
             'sinopsis' => $sinopsis,
             'penerbit' => $penerbit,
@@ -204,10 +265,10 @@ class BukuController extends Controller
         }
 
         if ($isUpdate) {
-            $query = DB::table($this->tbl_buku)->where('serial_id', $serial_id)->update($arrData);
+            $query = DB::table($this->tbl_book)->where('serial_id', $serial_id)->update($arrData);
 
         } else {
-            $query = DB::table($this->tbl_buku)->insert($arrData);
+            $query = DB::table($this->tbl_book)->insert($arrData);
         }
 
             $msg = 'Data berhasil disimpan';
@@ -220,27 +281,27 @@ class BukuController extends Controller
         return response()->json($data, $status);
     }
 
-    public function addRatting(Request $request)
+    public function addfeedback(Request $request)
     {
-        $kode_anggota = $request->input('kode_anggota');
-        $kode_buku = $request->input('kode_buku');
-        $ratting = $request->input('ratting');
+        $memberID = $request->input('memberID');
+        $bookID = $request->input('bookID');
+        $feedBackValue = $request->input('feedBackValue');
 
-        $check = DB::table($this->tbl_ratting)->where('kode_anggota', '=', $kode_anggota)->where('kode_buku', '=', $kode_buku)->first();
+        $check = DB::table($this->tbl_feedback)->where('memberID', '=', $memberID)->where('bookID', '=', $bookID)->first();
 
         $content = array(
-            'kode_anggota' => $kode_anggota,
-            'kode_buku' => $kode_buku,
-            'rate' => $ratting,
+            'memberID' => $memberID,
+            'bookID' => $bookID,
+            'rate' => $feedBackValue,
         );
 
         if ($check) {
-            $query = DB::table($this->tbl_ratting)
-                ->where('kode_anggota', $kode_anggota)
-                ->where('kode_buku', $kode_buku)
-                ->update(['rate' => $ratting]);
+            $query = DB::table($this->tbl_feedback)
+                ->where('memberID', $memberID)
+                ->where('bookID', $bookID)
+                ->update(['rate' => $feedBackValue]);
         } else {
-            $query = DB::table($this->tbl_ratting)->insert($content);
+            $query = DB::table($this->tbl_feedback)->insert($content);
         }
 
         if ($query) {
@@ -259,7 +320,7 @@ class BukuController extends Controller
     }
 
     public function delete($id){
-        $anggota = DB::table($this->tbl_buku);
+        $anggota = DB::table($this->tbl_book);
         $data = $anggota->where('serial_id',$id)->delete();
         return response()->json($data, 200);
     }

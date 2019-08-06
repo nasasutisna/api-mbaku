@@ -8,24 +8,23 @@ use Illuminate\Support\Facades\DB;
 class DashboardController extends Controller
 {
     //
-
-    var $tbl_ratting = 'ratting';
+    var $tbl_feedback = 'feedback';
 
     public function __construct()
     {
         //
-        $this->buku = DB::table('buku');
-        $this->category = DB::table('kategori');
+        $this->book = DB::table('book');
+        $this->category = DB::table('category');
     }
 
     public function index(Request $request)
     {
 
-        // $data = $this->buku->join('kategori','buku.kode_kategori = kategori.kode_kategori')->orderBy('ratting','desc')->paginate(5);
+        // $data = $this->book->join('category','book.categoryID = category.categoryID')->orderBy('feedback','desc')->paginate(5);
         // return response()->json($data);
     }
 
-    public function getDataBook(Request $request)
+    public function getBookList(Request $request)
     {
         $arrCategory = [];
         $pageIndex = $request->input('pageIndex');
@@ -37,18 +36,17 @@ class DashboardController extends Controller
         $keyword = $request->input('keyword');
         $skip = ($pageIndex == 0) ?  $pageIndex : ($pageIndex  * $pageSize);
 
-        $query = $this->buku;
-        $query->select('kategori.judul_kategori as kategori', 'buku.*');
-        $query->selectRaw('COALESCE((SELECT SUM(ratting.rate) FROM ratting where ratting.kode_buku = buku.kode_buku),0) as ratting');
-        $query->leftjoin('kategori','kategori.kode_kategori','=','buku.kode_kategori');
+        $query = $this->book;
+        $query->select('category.categoryTitle as category', 'book.*');
+        $query->selectRaw('COALESCE((SELECT SUM(feedback.feedbackValue) FROM feedback where feedback.bookID = book.bookID),0) as feedback');
+        $query->leftjoin('category','category.categoryID','=','book.categoryID');
 
-        $count_page = DB::table('buku')->count();
+        $count_page = DB::table('book')->count();
 
         // sort by stok
         if($sortBy != 'undefined' && $sortBy != ''){
             $sortBy = explode('|',$sortBy);
             $query = $query->orderBy($sortBy[0],$sortBy[1]);
-            // $query = $query->groupBy('buku.serial_id');
         }
 
         // filter category
@@ -58,7 +56,7 @@ class DashboardController extends Controller
                 $fil_category = $fil_category[0];
                 $arrCategory[] = $fil_category;
             }
-           $query = $query->whereIn('buku.kode_kategori', $arrCategory);
+           $query = $query->whereIn('book.categoryID', $arrCategory);
            $count_page = count($query->get());
         }
 
@@ -70,8 +68,8 @@ class DashboardController extends Controller
 
         // searching
         if($keyword != '' && $keyword != 'undefined'){
-            $query = $query->where('buku.judul', 'like', '%'.$keyword.'%');
-            $query = $query->orWhere('buku.pengarang', 'like', '%'.$keyword.'%');
+            $query = $query->where('book.bookTitle', 'like', '%'.$keyword.'%');
+            $query = $query->orWhere('book.bookWriter', 'like', '%'.$keyword.'%');
             $count_page = count($query->get());
         }
 
@@ -102,7 +100,7 @@ class DashboardController extends Controller
 
     public function getDataCategory()
     {
-        $data = $this->category->orderBy('judul_kategori', 'asc')->get();
+        $data = $this->category->orderBy('categoryTitle', 'asc')->get();
         return response()->json($data);
     }
 
@@ -144,16 +142,15 @@ class DashboardController extends Controller
     ##################################### DASHBOARD ADMIN #######################################################
     function dashboardAdmin(){
         $data = array();
-        $buku = DB::table('buku')->selectRaw("sum(jumlah) as jumlah, sum(stok) as stok")->first();
-        $anggota = DB::table('anggota')->count();
-        // $pengguna = DB::table('users')->count();
+        $book = DB::table('book')->selectRaw("sum(jumlah) as jumlah, sum(stok) as stok")->first();
+        $member = DB::table('member')->count();
 
         $month = date('m');
-        $totalPeminjaman =  DB::table('peminjaman')->selectRaw("count(kode_peminjaman) as total")->whereMonth('tanggal_pinjam',$month)->first();
+        $totalLoan =  DB::table('transaction_loan')->selectRaw("count(transactionLoanID) as total")->whereMonth('tanggal_pinjam',$month)->first();
 
-        $data['buku'] = $buku;
-        $data['anggota'] = $anggota;
-        $data['totalPeminjaman'] = $totalPeminjaman;
+        $data['book'] = $book;
+        $data['member'] = $member;
+        $data['totalLoan'] = $totalLoan;
 
         return response()->json($data, 200);
 

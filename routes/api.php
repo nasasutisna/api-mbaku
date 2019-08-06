@@ -18,33 +18,40 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::group(['prefix' => 'v1'], function () {
-    Route::get('dashboard/getBookList','DashboardController@getDataBook');
-    Route::get('anggota','AnggotaController@getDataAnggota');
-    Route::get('transaksi','TransaksiController@getDataTransaction');
-    Route::get('dashboard/admin','DashboardController@dashboardAdmin');
-    Route::get('dashboard/getCategories','DashboardController@getDataCategory');
-    Route::get('book/detail/{id}','BukuController@getDetailBook');
-    Route::get('book/getPopularBook','BukuController@getPopularBook');
-    Route::post('book/getEbook','BukuController@getEbook');
-    Route::post('book/store','BukuController@store');
-    Route::post('book/addRatting','BukuController@addRatting');
-    Route::post('book/checkMyRate','BukuController@checkMyRate');
-    Route::get('book/getBookByCategory/{id}','BukuController@getBookByCategory');
+    Route::get('book/getPopularBook','BookController@getPopularBook');
+    Route::get('book/getBookList','BookController@getBookList');
+    Route::get('ebook/getEbookList','EbookController@getEbookList');
     Route::post('login','LoginController@processLogin');
-    Route::post('anggota/daftar','AnggotaController@createAnggota');
-    Route::delete('anggota/delete/{id}','AnggotaController@delete');
-    Route::delete('book/delete/{id}','BukuController@delete');
-    Route::post('anggota/account/register','AnggotaController@registerAccount');
-    Route::post('anggota/account/update','AnggotaController@updateAnggota');
-    Route::get('anggota/account/detail/{kode_anggota}','AnggotaController@getDetail');
-    Route::post('transaksi/order','TransaksiController@purchase');
-    Route::get('transaksi/status/{id}','TransaksiController@getOrderStatus');
-    Route::get('transaksi/order/cancel/{order_id}','TransaksiController@cancelOrder');
-    Route::post('transaksi/order/pending','TransaksiController@checkExistsTransaction');
-    Route::post('transaksi/store','TransaksiController@store');
-    Route::post('transaksi/getListByAnggota','TransaksiController@getListByAnggota');
-    Route::post('transaksi/order/store','TransaksiController@saveOrder');
-    Route::post('transaksi/order/update','TransaksiController@updateStatusOrder');
-    Route::post('transaksi/order/book/pending','TransaksiController@orderBookPending');
-    Route::get('transaksi/order/getByAnggota/{kode_anggota}','TransaksiController@getOrderByAnggota');
 });
+
+
+
+    // Route::get('dashboard/getBookList','DashboardController@getDataBook');
+    // Route::get('anggota','AnggotaController@getDataAnggota');
+    // Route::get('transaksi','TransaksiController@getDataTransaction');
+    // Route::get('dashboard/admin','DashboardController@dashboardAdmin');
+    // Route::get('dashboard/getCategories','DashboardController@getDataCategory');
+    // Route::get('book/detail/{id}','BukuController@getDetailBook');
+    // Route::get('book/getPopularBook','BukuController@getPopularBook');
+    // Route::post('book/getEbook','BukuController@getEbook');
+    // Route::post('book/store','BukuController@store');
+    // Route::post('book/addRatting','BukuController@addRatting');
+    // Route::post('book/checkMyRate','BukuController@checkMyRate');
+    // Route::get('book/getBookByCategory/{id}','BukuController@getBookByCategory');
+    // Route::post('login','LoginController@processLogin');
+    // Route::post('anggota/daftar','AnggotaController@createAnggota');
+    // Route::delete('anggota/delete/{id}','AnggotaController@delete');
+    // Route::delete('book/delete/{id}','BukuController@delete');
+    // Route::post('anggota/account/register','AnggotaController@registerAccount');
+    // Route::post('anggota/account/update','AnggotaController@updateAnggota');
+    // Route::get('anggota/account/detail/{kode_anggota}','AnggotaController@getDetail');
+    // Route::post('transaksi/order','TransaksiController@purchase');
+    // Route::get('transaksi/status/{id}','TransaksiController@getOrderStatus');
+    // Route::get('transaksi/order/cancel/{order_id}','TransaksiController@cancelOrder');
+    // Route::post('transaksi/order/pending','TransaksiController@checkExistsTransaction');
+    // Route::post('transaksi/store','TransaksiController@store');
+    // Route::post('transaksi/getListByAnggota','TransaksiController@getListByAnggota');
+    // Route::post('transaksi/order/store','TransaksiController@saveOrder');
+    // Route::post('transaksi/order/update','TransaksiController@updateStatusOrder');
+    // Route::post('transaksi/order/book/pending','TransaksiController@orderBookPending');
+    // Route::get('transaksi/order/getByAnggota/{kode_anggota}','TransaksiController@getOrderByAnggota');

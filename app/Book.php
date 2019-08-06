@@ -4,9 +4,9 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Buku extends Model
+class Book extends Model
 {
-    protected $table = 'buku';
+    protected $table = 'book';
     // protected $fillable = [
     //     'kode_anggota','nama_lengkap', 'jenis_kelamin','alamat','email','nomor_handphone','status'
     // ];
@@ -17,6 +17,6 @@ class Buku extends Model
      * @var array
      */
     protected $hidden = [
-        'serial_id',
+        'bookSerialID',
     ];
 }

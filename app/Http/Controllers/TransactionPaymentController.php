@@ -5,20 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Midtrans;
-class TransaksiController extends Controller
-{
-    // //
-    // var $envTransaction = 'dev';
-    // var $urlTransction = "https://app.sandbox.midtrans.com/snap/v1/transactions";
 
-    /**
-     * Class constructor.
-     */
+class TransactionPaymentController extends Controller
+{
+
     public function __construct()
     {
-        // if($envTransaction == 'prod'){
-        //     $urlTransction = "https://api.midtrans.com";
-        // }
+
     }
 
     public function getListByAnggota(Request $request)
@@ -49,13 +42,12 @@ class TransaksiController extends Controller
                 $arrKodePeminjaman = [];
                 $no = 0;
                 foreach ($bookList as $key => $value) {
-                  $arrKodePeminjaman[$no++] = $value['kode_peminjaman'];
-                  $this->updateStokBook('pengembalian',$value['kode_buku'],$value['jumlah_pinjam']);
+                    $arrKodePeminjaman[$no++] = $value['kode_peminjaman'];
+                    $this->updateStokBook('pengembalian', $value['kode_buku'], $value['jumlah_pinjam']);
                 }
-                $save = DB::table('peminjaman')->whereIn('kode_peminjaman',$arrKodePeminjaman)->update(["status" => 1]);
+                $save = DB::table('peminjaman')->whereIn('kode_peminjaman', $arrKodePeminjaman)->update(["status" => 1]);
             }
-        }
-        else{
+        } else {
             // transaksi peminjaman
             if (count($bookList) > 0) {
                 foreach ($bookList as $key => $value) {
@@ -63,7 +55,7 @@ class TransaksiController extends Controller
                     $tempData[$key]['kode_buku'] = $value['kode_buku'];
                     $tempData[$key]['tanggal_kembali'] = $tanggal_pengembalian;
                     $tempData[$key]['jumlah_pinjam'] = $value['qty'];
-                    $this->updateStokBook('peminjaman',$value['kode_buku'],$value['qty']);
+                    $this->updateStokBook('peminjaman', $value['kode_buku'], $value['qty']);
                 }
 
                 $save = DB::table('peminjaman')->insert($tempData);
@@ -73,16 +65,16 @@ class TransaksiController extends Controller
 
     }
 
-    public function updateStokBook($transaction,$kode_buku,$qty){
-        $getStok = DB::table('buku')->select('stok')->where('kode_buku',$kode_buku)->first();
-        if($transaction == 'peminjaman'){
+    public function updateStokBook($transaction, $kode_buku, $qty)
+    {
+        $getStok = DB::table('buku')->select('stok')->where('kode_buku', $kode_buku)->first();
+        if ($transaction == 'peminjaman') {
             $stok = $getStok->stok - $qty;
-        }
-        else{
+        } else {
             $stok = $getStok->stok + $qty;
         }
 
-        $query = DB::table('buku')->where('kode_buku',$kode_buku)->update(['stok' => $stok]);
+        $query = DB::table('buku')->where('kode_buku', $kode_buku)->update(['stok' => $stok]);
         return response()->json($query, 200);
     }
 
@@ -95,56 +87,57 @@ class TransaksiController extends Controller
 
         $filter_category = json_decode($request->input('category'), true);
         $keyword = $request->input('keyword');
-        $skip = ($pageIndex == 0) ?  $pageIndex : ($pageIndex  * $pageSize);
+        $skip = ($pageIndex == 0) ? $pageIndex : ($pageIndex * $pageSize);
 
         $query = DB::table('peminjaman');
-        $query->select('peminjaman.*','peminjaman.status as status_pinjam', 'buku.judul', 'buku.kode_buku','anggota.kode_anggota','anggota.nama_lengkap');
-        $query->leftjoin('buku','buku.kode_buku','=','peminjaman.kode_buku');
-        $query->leftjoin('anggota','anggota.kode_anggota','=','peminjaman.kode_anggota');
-        $query->leftjoin('kategori','kategori.kode_kategori','=','buku.kode_kategori');
+        $query->select('peminjaman.*', 'peminjaman.status as status_pinjam', 'buku.judul', 'buku.kode_buku', 'anggota.kode_anggota', 'anggota.nama_lengkap');
+        $query->leftjoin('buku', 'buku.kode_buku', '=', 'peminjaman.kode_buku');
+        $query->leftjoin('anggota', 'anggota.kode_anggota', '=', 'peminjaman.kode_anggota');
+        $query->leftjoin('kategori', 'kategori.kode_kategori', '=', 'buku.kode_kategori');
 
         $count_page = $query->count();
 
         // searching
-        if($keyword != '' && $keyword != 'undefined'){
-            $query = $query->where('anggota.nama_lengkap', 'like', '%'.$keyword.'%');
-            $query = $query->orWhere('anggota.kode_anggota', 'like', '%'.$keyword.'%');
-            $query = $query->orWhere('buku.kode_buku', 'like', '%'.$keyword.'%');
-            $query = $query->orWhere('buku.judul', 'like', '%'.$keyword.'%');
-            $query = $query->orWhere('buku.pengarang', 'like', '%'.$keyword.'%');
+        if ($keyword != '' && $keyword != 'undefined') {
+            $query = $query->where('anggota.nama_lengkap', 'like', '%' . $keyword . '%');
+            $query = $query->orWhere('anggota.kode_anggota', 'like', '%' . $keyword . '%');
+            $query = $query->orWhere('buku.kode_buku', 'like', '%' . $keyword . '%');
+            $query = $query->orWhere('buku.judul', 'like', '%' . $keyword . '%');
+            $query = $query->orWhere('buku.pengarang', 'like', '%' . $keyword . '%');
             $count_page = count($query->get());
         }
 
-        if($request->input('status') == '0'){
-            $query = $query->where('peminjaman.status','0');
+        if ($request->input('status') == '0') {
+            $query = $query->where('peminjaman.status', '0');
             $count_page = count($query->get());
         }
 
         $query->skip($skip);
         $query->limit($pageSize);
-        $query->orderBy('kode_peminjaman','desc');
+        $query->orderBy('kode_peminjaman', 'desc');
 
         $query = $query->get();
-        $query = json_decode(json_encode($query),true);
+        $query = json_decode(json_encode($query), true);
 
         $data = array(
             'data' => $query,
             'limit' => $pageSize + 0,
             'page' => $pageIndex + 1,
-            'totalPage' => $count_page
+            'totalPage' => $count_page,
         );
 
         return response()->json($data);
     }
 
-
     ##################################### TRANSAKSI MIDTRANS ########################################################
 
-    function addTransaction(Request $request){
+    public function addTransaction(Request $request)
+    {
 
     }
 
-    public function purchase(Request $request) {
+    public function purchase(Request $request)
+    {
         $full_name = $request->input('full_name');
         $email = $request->input('email');
         $phone = $request->input('phone');
@@ -153,27 +146,27 @@ class TransaksiController extends Controller
         $price = $request->input('price');
 
         $transaction_details = [
-            'order_id' => 'MBAKU-'.time(),
-            'gross_amount' => $price
+            'order_id' => 'MBAKU-' . time(),
+            'gross_amount' => $price,
         ];
 
         $customer_details = [
             'first_name' => $full_name,
             'email' => $email,
-            'phone' => $phone
+            'phone' => $phone,
         ];
 
         $custom_expiry = [
             'start_time' => date("Y-m-d H:i:s O", time()),
             'unit' => 'day',
-            'duration' => 2
+            'duration' => 2,
         ];
 
         $item_details = [
             'id' => $kode_buku,
             'quantity' => 1,
             'name' => $judul,
-            'price' => $price
+            'price' => $price,
         ];
 
         $transaction_data = [
@@ -187,19 +180,22 @@ class TransaksiController extends Controller
         return response()->json($result, 200);
     }
 
-    function getOrderStatus($id){
+    public function getOrderStatus($id)
+    {
         $result = Midtrans::status($id);
         return response()->json($result, 200);
     }
 
-    function cancelOrder($order_id){
+    public function cancelOrder($order_id)
+    {
         $result = Midtrans::cancel($order_id);
         return response()->json($result, 200);
     }
 
-    function checkExistsTransaction(Request $request){
+    public function checkExistsTransaction(Request $request)
+    {
         $data = array(
-            'message' => ''
+            'message' => '',
         );
 
         $status = 200;
@@ -207,20 +203,21 @@ class TransaksiController extends Controller
         $kode_anggota = $request->input('kode_anggota');
         $transaction_status = $request->input('transaction_status');
 
-        $checkOrder =  DB::table('transaction_order')
-                       ->where('kode_anggota',$kode_anggota)
-                       ->where('transaction_status','pending')
-                       ->get();
+        $checkOrder = DB::table('transaction_order')
+            ->where('kode_anggota', $kode_anggota)
+            ->where('transaction_status', 'pending')
+            ->get();
 
-        if(count($checkOrder) > 0){
-           $status = 401;
-           $data['message'] = 'Anda masih mempunyai transaksi pembayaran yang belum diselesaikan';
+        if (count($checkOrder) > 0) {
+            $status = 401;
+            $data['message'] = 'Anda masih mempunyai transaksi pembayaran yang belum diselesaikan';
         }
 
         return response()->json($data, $status);
     }
 
-    function orderBookPending(Request $request){
+    public function orderBookPending(Request $request)
+    {
         $data = array();
 
         $status = 200;
@@ -229,17 +226,16 @@ class TransaksiController extends Controller
         $kode_buku = $request->input('kode_buku');
         $transaction_status = $request->input('transaction_status');
 
-        $checkOrder =  DB::table('transaction_order')
-                       ->where('kode_anggota',$kode_anggota)
-                       ->where('kode_buku',$kode_buku)
-                    //    ->where('transaction_status','pending')
-                       ->get();
+        $checkOrder = DB::table('transaction_order')
+            ->where('kode_anggota', $kode_anggota)
+            ->where('kode_buku', $kode_buku)
+        //    ->where('transaction_status','pending')
+            ->get();
 
-        if(count($checkOrder) > 0){
-           $data['data'] = json_decode(json_encode($checkOrder),true);
-        //    $data['pending'] = 1; // pending
-        }
-        else{
+        if (count($checkOrder) > 0) {
+            $data['data'] = json_decode(json_encode($checkOrder), true);
+            //    $data['pending'] = 1; // pending
+        } else {
             $data['data'] = [];
             // $data['pending'] = 0;
         }
@@ -247,7 +243,8 @@ class TransaksiController extends Controller
         return response()->json($data, $status);
     }
 
-    function saveOrder(Request $request){
+    public function saveOrder(Request $request)
+    {
         $content = array();
         $data = array();
         $status = 200;
@@ -256,23 +253,24 @@ class TransaksiController extends Controller
         $kode_buku = $request->input('kode_buku');
         $transaction_status = $request->input('transaction_status');
 
-            $content['kode_anggota'] = $kode_anggota;
-            $content['kode_buku'] = $kode_buku;
-            $content['transaction_id'] = $request->input('transaction_id');
-            $content['order_id'] = $request->input('order_id');
-            $content['payment_type'] = $request->input('payment_type');
-            $content['gross_amount'] = $request->input('gross_amount');
-            $content['transaction_token'] = $request->input('token');
-            $content['transaction_status'] = $transaction_status;
-            $content['transaction_time'] = $request->input('transaction_time');
+        $content['kode_anggota'] = $kode_anggota;
+        $content['kode_buku'] = $kode_buku;
+        $content['transaction_id'] = $request->input('transaction_id');
+        $content['order_id'] = $request->input('order_id');
+        $content['payment_type'] = $request->input('payment_type');
+        $content['gross_amount'] = $request->input('gross_amount');
+        $content['transaction_token'] = $request->input('token');
+        $content['transaction_status'] = $transaction_status;
+        $content['transaction_time'] = $request->input('transaction_time');
 
-            $save = DB::table('transaction_order')->insert($content);
-            $data['message'] = 'success';
+        $save = DB::table('transaction_order')->insert($content);
+        $data['message'] = 'success';
 
         return response()->json($data, $status);
     }
 
-    function updateStatusOrder(Request $request){
+    public function updateStatusOrder(Request $request)
+    {
         $content = array();
         $data = array();
         $status = 200;
@@ -281,37 +279,36 @@ class TransaksiController extends Controller
         $transaction_token = $request->input('transaction_token');
         $transaction_status = $request->input('transaction_status');
 
-            $content['transaction_status'] = $transaction_status;
-            // $content['transaction_time'] = $request->input('transaction_time');
+        $content['transaction_status'] = $transaction_status;
+        // $content['transaction_time'] = $request->input('transaction_time');
 
-            $save = DB::table('transaction_order')->where('transaction_token',$transaction_token)->update($content);
-            $data['message'] = 'success';
+        $save = DB::table('transaction_order')->where('transaction_token', $transaction_token)->update($content);
+        $data['message'] = 'success';
 
         return response()->json($data, $status);
     }
 
-    function getOrderByAnggota($kode_anggota){
+    public function getOrderByAnggota($kode_anggota)
+    {
         $data = array();
         $status = 200;
 
-        $order =  DB::table('transaction_order')
-                       ->where('kode_anggota',$kode_anggota)
-                       ->leftjoin('buku','buku.kode_buku','=','transaction_order.kode_buku')
-                       ->leftjoin('kategori','kategori.kode_kategori','=','buku.kode_kategori')
-                       ->orderBy('transaction_order.serial_id','desc')
-                       ->get();
+        $order = DB::table('transaction_order')
+            ->where('kode_anggota', $kode_anggota)
+            ->leftjoin('buku', 'buku.kode_buku', '=', 'transaction_order.kode_buku')
+            ->leftjoin('kategori', 'kategori.kode_kategori', '=', 'buku.kode_kategori')
+            ->orderBy('transaction_order.serial_id', 'desc')
+            ->get();
 
-                    //    print_r(' empty tes : '.!empty($order));
-                    //    exit();
-        if(count($order) > 0){
-           $data['data']= json_decode(json_encode($order),true);
-        }
-        else{
+        //    print_r(' empty tes : '.!empty($order));
+        //    exit();
+        if (count($order) > 0) {
+            $data['data'] = json_decode(json_encode($order), true);
+        } else {
             $data['data'] = [];
         }
 
         return response()->json($data, $status);
     }
-
 
 }

@@ -7,7 +7,12 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 class LoginController extends Controller
 {
-    //
+    public function __construct()
+    {
+        $this->users = DB::table('users');
+        $this->member = DB::table('member');
+    }
+
     public function processLogin(Request $request){
 
         $data = [];
@@ -20,29 +25,25 @@ class LoginController extends Controller
         $email = $request->input('email');
         $password = $request->input('password');
 
-        $users = DB::table('users');
-        $anggota = DB::table('anggota');
+        $checkUser = $this->users->where('email','=',$email)->first();
 
-        $query = $users;
-        $check_email = $query->where('email','=',$email)->first();
-
-        if($check_email){
-            $pass = $check_email->password;
+        if($checkUser){
+            $pass = $checkUser->password;
             $verify = password_verify($password, $pass);
 
             if($verify){
-                $anggota = $anggota->where('email','=',$email)->first();
+                $member = $this->member->where('userID','=',$checkUser->userID)->first();
                 $msg = 'success';
 
                 $userLogin = array(
                     'userInfo' => [],
-                    'userStatus' => $check_email->status
+                    'userStatus' => $checkUser->status
                 );
 
-                if($anggota){
+                if($member){
                     $userLogin = array(
-                        'userInfo' => $anggota,
-                        'userStatus' => $check_email->status
+                        'userInfo' => $member,
+                        'userStatus' => $checkUser->status
                     );
                 }
 
@@ -51,13 +52,13 @@ class LoginController extends Controller
             }
             else{
                 $isLogin = false;
-                $status = 500;
+                $status = 401;
                 $msg = 'Password salah';
             }
         }
         else{
             $isLogin = false;
-            $status = 500;
+            $status = 401;
             $msg = 'Email tidak terdaftar';
         }
 
@@ -66,7 +67,7 @@ class LoginController extends Controller
             'user' => $userLogin,
             'isLogin' => array(
                 'status' => $isLogin,
-                'auth' => $token
+                'token' => $token
             ),
         );
 

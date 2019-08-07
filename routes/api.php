@@ -25,6 +25,8 @@ Route::group(['prefix' => 'v1'], function () {
     Route::get('login/generateToken','LoginController@generateToken');
     Route::get('ebook/detail/{id}','EbookController@getDetailEbook');
     Route::get('library/detail/{id}','LibraryController@getDetailLibrary');
+    Route::get('loanTransaction/user/{id}','LoanTransactionController@getLoanTransaction');
+    Route::get('historyTransaction/user/{id}','LoanTransactionController@getHistoryTransaction');
 });
 
 

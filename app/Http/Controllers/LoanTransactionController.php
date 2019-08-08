@@ -32,7 +32,7 @@ class LoanTransactionController extends Controller
         $query->where('transaction_loan.memberID', $memberID);
         $query->where('transactionLoanStatus', 0);
 
-        $query = $query->first();
+        $query = $query->get();
         $data = json_decode(json_encode($query), true);
 
         return response()->json($data);
@@ -55,7 +55,7 @@ class LoanTransactionController extends Controller
         $query->where('transaction_loan.memberID', $memberID);
         $query->where('transactionLoanStatus', 1);
 
-        $query = $query->first();
+        $query = $query->get();
         $data = json_decode(json_encode($query), true);
 
         return response()->json($data);

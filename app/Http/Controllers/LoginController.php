@@ -32,7 +32,7 @@ class LoginController extends Controller
             $verify = password_verify($password, $pass);
 
             if($verify){
-                $member = $this->member->where('userID','=',$checkUser->userID)->first();
+                $member = $this->member->where('email','=',$checkUser->email)->first();
                 $msg = 'success';
 
                 $userLogin = array(

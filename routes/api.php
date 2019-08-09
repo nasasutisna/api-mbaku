@@ -27,6 +27,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::get('library/detail/{id}','LibraryController@getDetailLibrary');
     Route::get('loanTransaction/user/{id}','LoanTransactionController@getLoanTransaction');
     Route::get('historyTransaction/user/{id}','LoanTransactionController@getHistoryTransaction');
+    Route::post('register','RegisterController@registerUser');
 });
 
 

@@ -1,31 +1,29 @@
 <?php
 
 namespace App\Http\Controllers;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Hash;
+
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RegisterController extends Controller
 {
+    public function __construct()
+    {
+        $this->member = DB::table('member');
+        $this->users = DB::table('users');
+    }
+
     public function registerUser(Request $request)
     {
-        $date=date('Y-m-d');
+        $date = date('Y-m-d');
         $data = [];
         $msg = '';
         $status = 200;
-        
-        $verify = $this->validate($request, [
-            'firstName' => 'required',
-            'gender' => 'required',
-            'phone' => 'required||min:11',
-            'address' => 'required',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6|confirmed', 
-        ]);
 
-        if ($verify){
-            $member = DB::table('member')->insert([
+        $checkExistMember = $this->users->where("email", $request->email)->first();
+
+        if (!$checkExistMember) {
+            $saveMember = $this->member->insert([
                 'memberID' => $request->memberID,
                 'memberFirstName' => $request->firstName,
                 'memberLastName' => $request->lastName,
@@ -36,28 +34,35 @@ class RegisterController extends Controller
                 'memberPhoto' => $request->photo,
                 'memberRole' => 0,
                 'memberJoinDate' => $date,
-                'updatedAt' => null
+                'updatedAt' => null,
             ]);
 
-            $users = DB::table('users')->insert([
-                'email' => $request->email,
-                'password'=> bcrypt($request->password),
-                'role' => 0
-            ]);
+            if ($saveMember) {
+                $users = $this->users->insert([
+                    'email' => $request->email,
+                    'password' => bcrypt($request->password),
+                    'role' => 0,
+                ]);
 
-            $msg = 'success';
-         }
-         else{
-            $msg = 'fail';
+                if ($users) {
+                    $msg = 'success';
+                } else {
+                    $status = 500;
+                }
+            } else {
+                $status = 500;
+            }
+        } else {
+            $msg = 'Email sudah terdaftar';
             $status = 401;
-         }
+        }
 
-         $data = array(
+        $data = array(
             'msg' => $msg,
-            'status' => $status
+            'status' => $status,
         );
 
-        return response()->json($data);
+        return response()->json($data, $status);
 
     }
 }

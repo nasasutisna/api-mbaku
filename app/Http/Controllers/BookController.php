@@ -22,21 +22,20 @@ class BookController extends Controller
     public function getBookList(Request $request)
     {
         $arrCategory = [];
-        $pageIndex = $request->input('pageIndex');
-        $pageSize = $request->input('pageSize');
+        $page = $request->input('page') ? $request->input('page') : 1;
+        $limit = $request->input('limit') ? $request->input('limit') : 10;
         $sortBy = $request->input('sortBy');
         $filterEbook = $request->input('filterEbook');
 
-        $filter_category = json_decode($request->input('category'), true);
+        $filter_category = $request->input('category') ? json_decode($request->input('category'), true) : [];
         $keyword = $request->input('keyword');
-        $skip = ($pageIndex == 0) ? $pageIndex : ($pageIndex * $pageSize);
+
+        $skip = ($page == 1) ? $page-1 : (($page-1) * $limit);
+
 
         $query = $this->book;
         $query->select('category.categoryTitle as category', 'book.*');
-        $query->selectRaw('COALESCE((SELECT SUM(feedback.feedbackValue) FROM feedback where feedback.ebookID = book.bookID),0) as feedback');
         $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
-
-        $count_page = DB::table('book')->count();
 
         // sort by stok
         if ($sortBy != 'undefined' && $sortBy != '') {
@@ -68,16 +67,20 @@ class BookController extends Controller
         }
 
         $query->skip($skip);
-        $query->limit($pageSize);
+        $query->limit($limit);
+
+        $temp = $query;
+        $countRows = $temp->count();
+        $totalPage = $countRows <= $limit ?  1 : ceil($countRows / $limit);
 
         $query = $query->get();
-        $query = json_decode(json_encode($query), true);
 
         $data = array(
             'data' => $query,
-            'limit' => $pageSize + 0,
-            'page' => $pageIndex + 1,
-            'total' => $count_page,
+            'limit' => (int) $limit,
+            'page' => (int) $page,
+            'total' => $countRows,
+            'totalPage' => $totalPage,
         );
 
         return response()->json($data);
@@ -334,24 +337,24 @@ class BookController extends Controller
     public function searchTitle(Request $request)
     {
         $keyword = $request->keyword;
-        $pageIndex = $request->input('pageIndex') ? $request->input('pageIndex') : 0;
-        $pageSize = $request->input('pageSize') ? $request->input('pageSize') : 10;
-        $skip = ($pageIndex == 0) ? $pageIndex : ($pageIndex * $pageSize);
+        $page = $request->input('page') ? $request->input('page') : 1;
+        $limit = $request->input('limit') ? $request->input('limit') : 10;
+        $skip = ($page == 1) ? $page-1 : (($page-1) * $limit);
 
         $query = $this->book->selectRaw("DISTINCT(bookTitle) as bookTitle")
             ->where('bookTitle', 'like', '%'.$keyword.'%')
             ->skip($skip)
-            ->limit($pageSize);
+            ->limit($limit);
 
         $temp = $query;
         $countRows = $temp->count();
-        $totalPage = $countRows <= $pageSize ?  1 : ceil($countRows / $pageSize);
-
+        $totalPage = $countRows <= $limit ?  1 : ceil($countRows / $limit);
         $query = $query->get();
+
         $data = array(
             'data' => $query,
-            'limit' => $pageSize + 0,
-            'page' => $pageIndex + 1,
+            'limit' => (int) $limit,
+            'page' => (int) $page,
             'total' => $countRows,
             'totalPage' => $totalPage
         );

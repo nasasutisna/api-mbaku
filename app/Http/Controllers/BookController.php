@@ -34,7 +34,7 @@ class BookController extends Controller
 
 
         $query = $this->book;
-        $query->select('category.categoryTitle as category', 'book.*');
+        $query->select('category.categoryTitle', 'book.*');
         $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
 
         // sort by stok
@@ -86,27 +86,16 @@ class BookController extends Controller
         return response()->json($data);
     }
 
-    public function getDetailBook(Request $request, $id)
+    public function getDetailBook( $id)
     {
         $bookID = $id;
-        $feedBack = 0;
 
-        $getRate = DB::table($this->tbl_feedback)
-            ->where('bookID', $bookID)
-            ->sum('feedBackValue');
-
-        if ($getRate) {
-            $feedBack = $getRate;
-        }
-
-        $query = $this->book;
-        $query->select('category.categoryTitle', 'book.*');
-        $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
-        $query->where('bookID', $bookID);
+        $query = $this->book->select('category.categoryTitle', 'book.*')
+                ->leftjoin('category', 'category.categoryID', '=', 'book.categoryID')
+                ->where('bookID', $bookID);
 
         $query = $query->first();
         $data = json_decode(json_encode($query), true);
-        $data['feedBack'] = $feedBack;
 
         return response()->json($data);
     }

@@ -19,10 +19,11 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::group(['prefix' => 'v1'], function () {
     Route::get('book/getPopularBook','BookController@getPopularBook');
-    Route::post('book/getBookList','BookController@getBookList');
+    Route::get('book/getBookList','BookController@getBookList');
     Route::get('ebook/getEbookList','EbookController@getEbookList');
-    Route::post('book/searchTitle','BookController@searchTitle');
+    Route::get('book/searchTitle','BookController@searchTitle');
     Route::post('book/store','BookController@store');
+    Route::get('book/detail/{id}','BookController@getDetailBook');
     Route::post('login','LoginController@processLogin');
     Route::get('login/generateToken','LoginController@generateToken');
     Route::get('ebook/detail/{id}','EbookController@getDetailEbook');

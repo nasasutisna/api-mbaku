@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use function GuzzleHttp\json_decode;
+use function GuzzleHttp\json_encode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Storage;
 
 class BookController extends Controller
 {
-    //
-    public $tbl_book = 'book';
     public $tbl_feedback = 'feedback';
 
     public function __construct()
@@ -21,26 +22,25 @@ class BookController extends Controller
     public function getBookList(Request $request)
     {
         $arrCategory = [];
-        $pageIndex = $request->input('pageIndex');
-        $pageSize = $request->input('pageSize');
+        $page = $request->input('page') ? $request->input('page') : 1;
+        $limit = $request->input('limit') ? $request->input('limit') : 10;
         $sortBy = $request->input('sortBy');
         $filterEbook = $request->input('filterEbook');
 
-        $filter_category = json_decode($request->input('category'), true);
+        $filter_category = $request->input('category') ? json_decode($request->input('category'), true) : [];
         $keyword = $request->input('keyword');
-        $skip = ($pageIndex == 0) ?  $pageIndex : ($pageIndex  * $pageSize);
+
+        $skip = ($page == 1) ? $page-1 : (($page-1) * $limit);
+
 
         $query = $this->book;
         $query->select('category.categoryTitle as category', 'book.*');
-        $query->selectRaw('COALESCE((SELECT SUM(feedback.feedbackValue) FROM feedback where feedback.ebookID = book.bookID),0) as feedback');
-        $query->leftjoin('category','category.categoryID','=','book.categoryID');
-
-        $count_page = DB::table('book')->count();
+        $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
 
         // sort by stok
-        if($sortBy != 'undefined' && $sortBy != ''){
-            $sortBy = explode('|',$sortBy);
-            $query = $query->orderBy($sortBy[0],$sortBy[1]);
+        if ($sortBy != 'undefined' && $sortBy != '') {
+            $sortBy = explode('|', $sortBy);
+            $query = $query->orderBy($sortBy[0], $sortBy[1]);
         }
 
         // filter category
@@ -50,34 +50,37 @@ class BookController extends Controller
                 $fil_category = $fil_category[0];
                 $arrCategory[] = $fil_category;
             }
-           $query = $query->whereIn('book.categoryID', $arrCategory);
-           $count_page = count($query->get());
+            $query = $query->whereIn('book.categoryID', $arrCategory);
+            $count_page = count($query->get());
         }
 
-
-        if($filterEbook) {
-            $query = $query->where('ebook','!=','');
+        if ($filterEbook) {
+            $query = $query->where('ebook', '!=', '');
             $count_page = count($query->get());
         }
 
         // searching
-        if($keyword != '' && $keyword != 'undefined'){
-            $query = $query->where('book.bookTitle', 'like', '%'.$keyword.'%');
-            $query = $query->orWhere('book.bookWriter', 'like', '%'.$keyword.'%');
+        if ($keyword != '' && $keyword != 'undefined') {
+            $query = $query->where('book.bookTitle', 'like', '%' . $keyword . '%');
+            $query = $query->orWhere('book.bookWriter', 'like', '%' . $keyword . '%');
             $count_page = count($query->get());
         }
 
         $query->skip($skip);
-        $query->limit($pageSize);
+        $query->limit($limit);
+
+        $temp = $query;
+        $countRows = $temp->count();
+        $totalPage = $countRows <= $limit ?  1 : ceil($countRows / $limit);
 
         $query = $query->get();
-        $query = json_decode(json_encode($query),true);
 
         $data = array(
             'data' => $query,
-            'limit' => $pageSize + 0,
-            'page' => $pageIndex + 1,
-            'totalPage' => $count_page
+            'limit' => (int) $limit,
+            'page' => (int) $page,
+            'total' => $countRows,
+            'totalPage' => $totalPage,
         );
 
         return response()->json($data);
@@ -211,12 +214,14 @@ class BookController extends Controller
     public function store(Request $request)
     {
         $msg = '';
-        $status = '';
-        $imagePath= '';
-        $ebookName= '';
+        $status = 200;
+        $imagePath = '';
+        $ebookName = '';
+        $date = date('Ymdhis');
+        $uuid = Str::uuid();
 
         $image = $request->file('path_image');
-        if($image){
+        if ($image) {
             $imageName = $image->getClientOriginalName();
             $imagePath = 'storage/app/public/coverbook/' . $imageName;
             $store = $image->storeAs('public/coverbook', $imageName);
@@ -230,49 +235,53 @@ class BookController extends Controller
 
         // check action add or edit true if its edit
         $isUpdate = $request->input('isUpdate');
+        $libraryID = $request->input('libraryID');
+        $defaultBookID = $date . '-' . $uuid;
 
-        $serial_id = $request->input('serial_id');
-        $bookID = $request->input('bookID');
-        $judul = $request->input('judul');
+        $bookSerialID = $request->input('bookSerialID');
+        $bookID = $request->input('bookID') ? $request->input('bookID') : $defaultBookID;
+        $bookTitle = $request->input('bookTitle');
         $categoryID = $request->input('categoryID');
-        $pengarang = $request->input('pengarang');
-        $sinopsis = $request->input('sinopsis');
-        $penerbit = $request->input('penerbit');
-        $tahun_terbit = $request->input('tahun_terbit');
-        $stok = $request->input('stok');
-        $jumlah = $request->input('jumlah');
-        $harga_ebook = $request->input('harga_ebook');
+        $bookWriter = $request->input('bookWriter');
+        $bookDescription = $request->input('bookDescription');
+        $bookDistributor = $request->input('bookDistributor');
+        $bookRelease = $request->input('bookRelease');
+        $bookTotal = $request->input('bookTotal');
+        $bookStock = $request->input('bookStock') || $bookTotal;
+        $createdBy = $request->input('createdBy');
+        $updatedBy = $request->input('updatedBy');
 
-        $arrData = array(
+        $content = array(
             'bookID' => $bookID,
-            'judul' => $judul,
+            'bookTitle' => $bookTitle,
             'categoryID' => $categoryID,
-            'pengarang' => $pengarang,
-            'sinopsis' => $sinopsis,
-            'penerbit' => $penerbit,
-            'tahun_terbit' => $tahun_terbit,
-            'stok' => $stok,
-            'harga_ebook' => $harga_ebook,
-            'jumlah' => $jumlah
+            'bookWriter' => $bookWriter,
+            'bookDescription' => $bookDescription,
+            'bookRelease' => $bookRelease,
+            'bookDistributor' => $bookDistributor,
+            'bookStock' => $bookStock,
+            'bookTotal' => $bookTotal,
+            'categoryID' => $categoryID,
+            'libraryID' => $libraryID,
         );
 
-        if($imagePath){
-            $arrData['path_image'] = $imagePath;
+        if ($imagePath) {
+            $content['path_image'] = $imagePath;
         }
 
-        if($ebookName){
-            $arrData['ebook'] = $ebookName;
+        if ($ebookName) {
+            $content['ebook'] = $ebookName;
         }
 
-        if ($isUpdate) {
-            $query = DB::table($this->tbl_book)->where('serial_id', $serial_id)->update($arrData);
-
+        if ($isUpdate == 'true') {;
+            $content['updatedBy'] = $updatedBy;
+            $query = $this->book->where('bookSerialID', $bookSerialID)->update($content);
         } else {
-            $query = DB::table($this->tbl_book)->insert($arrData);
+            $content['createdBy'] = $createdBy;
+            $query = $this->book->insert($content);
         }
 
-            $msg = 'Data berhasil disimpan';
-            $status = 200;
+        $msg = 'Data berhasil disimpan';
 
         $data = array(
             'msg' => $msg,
@@ -319,9 +328,38 @@ class BookController extends Controller
         return response()->json($data, $status);
     }
 
-    public function delete($id){
-        $anggota = DB::table($this->tbl_book);
-        $data = $anggota->where('serial_id',$id)->delete();
+    public function delete($id)
+    {
+        $data = $this->book->where('bookSerialID', $id)->delete();
         return response()->json($data, 200);
     }
+
+    public function searchTitle(Request $request)
+    {
+        $keyword = $request->keyword;
+        $page = $request->input('page') ? $request->input('page') : 1;
+        $limit = $request->input('limit') ? $request->input('limit') : 10;
+        $skip = ($page == 1) ? $page-1 : (($page-1) * $limit);
+
+        $query = $this->book->selectRaw("DISTINCT(bookTitle) as bookTitle")
+            ->where('bookTitle', 'like', '%'.$keyword.'%')
+            ->skip($skip)
+            ->limit($limit);
+
+        $temp = $query;
+        $countRows = $temp->count();
+        $totalPage = $countRows <= $limit ?  1 : ceil($countRows / $limit);
+        $query = $query->get();
+
+        $data = array(
+            'data' => $query,
+            'limit' => (int) $limit,
+            'page' => (int) $page,
+            'total' => $countRows,
+            'totalPage' => $totalPage
+        );
+
+        return response()->json($data, 200);
+    }
+
 }

@@ -8,10 +8,12 @@ use Illuminate\Support\Facades\DB;
 class MemberController extends Controller
 {
     public $tbl_member = 'member';
+    public $tbl_transaction_loan = 'transaction_loan';
 
     public function __construct()
     {
-        //
+        $this->member_premium = DB::table('member_premium');
+        $this->transaction_loan = DB::table('transaction_loan');
     }
 
     public function createMember(Request $request)
@@ -227,5 +229,40 @@ class MemberController extends Controller
         );
 
         return response()->json($data);
+    }
+
+    public function userBanner($id)
+    {
+        $memberID = $id;
+        $isMemberPremium = 0;
+
+        $checkMemberPremium = $this->member_premium->where("memberID", $memberID)->where("memberApproval", 1)->first();
+
+        if ($checkMemberPremium) {
+            $checkTransaction = $this->transaction_loan->where("memberID", $memberID)->where("transactionLoanStatus", 0)->first();
+
+            if ($checkTransaction) {
+                $isMemberPremium = 1;
+                 
+            } else {
+                $isMemberPremium = 1;
+            }
+        } else {
+            $isMemberPremium = 0;
+        }
+
+        $query = $this->transaction_loan;
+        $query->where("memberID", $memberID)->where("transactionLoanStatus", 0);
+        $query = $query->first();
+
+        $loanTrx = json_decode(json_encode($query), true);
+        
+        $data = array(
+            'isMemberPremium' => $isMemberPremium,
+            'borrow' => $loanTrx,
+        );
+
+        return response()->json($data);
+
     }
 }

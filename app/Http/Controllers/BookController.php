@@ -173,7 +173,7 @@ class BookController extends Controller
         $query->limit(10);
         $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
         $query->leftjoin('library', 'library.libraryID', '=', 'book.libraryID');
-        $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity', );
+        $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity');
         $query = $query->orderBy('loancount', 'desc');
 
         $query = $query->get();
@@ -364,14 +364,14 @@ class BookController extends Controller
             $newRelease1,
             $newRelease2
         );
-        
+
         $query = $this->book;
         $query->select('book.*', 'category.categoryTitle', 'library.libraryName', 'library.libraryCity', 'regencies.name');
         $query->selectRaw('COALESCE((SELECT SUM(feedback.feedBackValue) FROM feedback where feedback.ebookID = book.bookID),0) as feedback');
         $query->limit(10);
         $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
         $query->leftjoin('library', 'library.libraryID', '=', 'book.libraryID');
-        $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity', );
+        $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity');
         $query->whereIn('bookRelease', $newRelease);
         $query = $query->orderBy('bookRelease', 'desc');
 

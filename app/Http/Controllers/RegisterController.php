@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Str;
 class RegisterController extends Controller
 {
     public function __construct()
@@ -19,19 +19,20 @@ class RegisterController extends Controller
         $data = [];
         $msg = '';
         $status = 200;
-
+        $uuid = Str::uuid();
         $checkExistMember = $this->users->where("email", $request->email)->first();
+        $memberID = 'member-'.$uuid.'-'.time();
 
         if (!$checkExistMember) {
             $saveMember = $this->member->insert([
-                'memberID' => $request->memberID,
+                'memberID' => $memberID,
                 'memberFirstName' => $request->firstName,
                 'memberLastName' => $request->lastName,
-                'memberGender' => $request->gender,
+                'memberGender' => $request->gender || null,
                 'memberPhone' => $request->phone,
                 'memberEmail' => $request->email,
-                'memberAddress' => $request->address,
-                'memberPhoto' => $request->photo,
+                'memberAddress' => $request->address || null,
+                'memberPhoto' => $request->photo || null,
                 'memberRole' => 0,
                 'memberJoinDate' => $date,
                 'updatedAt' => null,

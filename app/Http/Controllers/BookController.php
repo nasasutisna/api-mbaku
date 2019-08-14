@@ -353,14 +353,9 @@ class BookController extends Controller
 
     public function getNewBook()
     {
-        $newRelease1 = $this->book->select('bookRelease')->distinct()->orderBy('bookRelease', 'desc')->value('bookRelease');
-        $convert = (int)$newRelease1;
-        $newRelease2 = $convert - 1;
-        $newRelease = array(
-            $newRelease1,
-            $newRelease2
-        );
-        
+        $currentYR = date('Y');
+        $threeYR = $currentYR - 3;
+
         $query = $this->book;
         $query->select('book.*', 'category.categoryTitle', 'library.libraryName', 'library.libraryCity', 'regencies.name');
         $query->selectRaw('COALESCE((SELECT SUM(feedback.feedBackValue) FROM feedback where feedback.ebookID = book.bookID),0) as feedback');
@@ -368,7 +363,7 @@ class BookController extends Controller
         $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
         $query->leftjoin('library', 'library.libraryID', '=', 'book.libraryID');
         $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity', );
-        $query->whereIn('bookRelease', $newRelease);
+        $query->whereBetween('bookRelease', array($threeYR, $currentYR));
         $query = $query->orderBy('bookRelease', 'desc');
 
         $query = $query->get();

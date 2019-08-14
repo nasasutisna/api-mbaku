@@ -17,6 +17,7 @@ class BookController extends Controller
     {
         $this->category = DB::table('category');
         $this->book = DB::table('book');
+        $this->transaction_loan = DB::table('transaction_loan');
     }
 
     public function getBookList(Request $request)
@@ -166,11 +167,14 @@ class BookController extends Controller
     public function getPopularBook()
     {
         $query = $this->book;
-        $query->select('book.*', 'category.categoryTitle');
+        $query->select('book.*', 'category.categoryTitle', 'library.libraryName', 'library.libraryCity', 'regencies.name');
         $query->selectRaw('COALESCE((SELECT SUM(feedback.feedBackValue) FROM feedback where feedback.ebookID = book.bookID),0) as feedback');
+        $query->selectRaw('COALESCE((SELECT SUM(transaction_loan.bookID) FROM transaction_loan where transaction_loan.bookID = book.bookID),0) as loancount');
         $query->limit(10);
         $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
-        $query = $query->orderBy('feedback', 'desc');
+        $query->leftjoin('library', 'library.libraryID', '=', 'book.libraryID');
+        $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity', );
+        $query = $query->orderBy('loancount', 'desc');
 
         $query = $query->get();
 

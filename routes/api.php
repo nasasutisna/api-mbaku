@@ -28,11 +28,13 @@ Route::group(['prefix' => 'v1'], function () {
     Route::get('login/generateToken','LoginController@generateToken');
     Route::get('ebook/detail/{id}','EbookController@getDetailEbook');
     Route::get('library/detail/{id}','LibraryController@getDetailLibrary');
+    Route::post('library/store','LibraryController@store');
     Route::get('loanTransaction/user/{id}','LoanTransactionController@getLoanTransaction');
     Route::get('historyTransaction/user/{id}','LoanTransactionController@getHistoryTransaction');
     Route::post('register','RegisterController@registerUser');
     Route::get('userBanner/{id}','MemberController@userBanner');
     Route::get('book/getNewBook','BookController@getNewBook');
+    Route::post('library/getNearby','LibraryController@getNearby');
 });
 
 

@@ -207,29 +207,15 @@ class BookController extends Controller
     public function store(Request $request)
     {
         $msg = '';
+        $bookCoverName = '';
         $status = 200;
-        $imagePath = '';
-        $ebookName = '';
         $date = date('Ymdhis');
         $uuid = Str::uuid();
-
-        $image = $request->file('path_image');
-        if ($image) {
-            $imageName = $image->getClientOriginalName();
-            $imagePath = 'storage/app/public/coverbook/' . $imageName;
-            $store = $image->storeAs('public/coverbook', $imageName);
-        }
-
-        $ebook = $request->file('ebook');
-        if ($ebook) {
-            $ebookName = $ebook->getClientOriginalName();
-            $storeEbook = $ebook->storeAs('public/ebook', $ebookName);
-        }
 
         // check action add or edit true if its edit
         $isUpdate = $request->input('isUpdate');
         $libraryID = $request->input('libraryID');
-        $defaultBookID = $date . '-' . $uuid;
+        $defaultBookID = $uuid . '-' . $date;
 
         $bookSerialID = $request->input('bookSerialID');
         $bookID = $request->input('bookID') ? $request->input('bookID') : $defaultBookID;
@@ -244,6 +230,13 @@ class BookController extends Controller
         $createdBy = $request->input('createdBy');
         $updatedBy = $request->input('updatedBy');
 
+        $bookCover = $request->file('bookCover');
+        if ($bookCover) {
+            $bookCoverName = str_replace(' ','_', $date.'_'.$bookCover->getClientOriginalName());
+            $bookCover->storeAs('public/bookcover/'.$libraryID, $bookCoverName);
+        }
+
+
         $content = array(
             'bookID' => $bookID,
             'bookTitle' => $bookTitle,
@@ -253,18 +246,12 @@ class BookController extends Controller
             'bookRelease' => $bookRelease,
             'bookDistributor' => $bookDistributor,
             'bookStock' => $bookStock,
+            'bookStock' => $bookStock,
             'bookTotal' => $bookTotal,
+            'bookCover' => $bookCoverName,
             'categoryID' => $categoryID,
             'libraryID' => $libraryID,
         );
-
-        if ($imagePath) {
-            $content['path_image'] = $imagePath;
-        }
-
-        if ($ebookName) {
-            $content['ebook'] = $ebookName;
-        }
 
         if ($isUpdate == 'true') {;
             $content['updatedBy'] = $updatedBy;

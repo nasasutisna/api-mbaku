@@ -62,8 +62,8 @@ class BookController extends Controller
 
         // searching
         if ($keyword != '' && $keyword != 'undefined') {
-            $query = $query->where('book.bookTitle', 'like', '%' . $keyword . '%');
-            $query = $query->orWhere('book.bookWriter', 'like', '%' . $keyword . '%');
+            $query = $query->where('book.bookTitle', $keyword);
+            // $query = $query->orWhere('book.bookWriter', 'like', '%' . $keyword . '%');
             $count_page = count($query->get());
         }
 

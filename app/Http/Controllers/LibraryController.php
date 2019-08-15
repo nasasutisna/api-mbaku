@@ -100,6 +100,7 @@ class LibraryController extends Controller
         $getCity = DB::table($this->tbl_regencies)->where('name', 'like', '%' . $city . '%')->get();
 
         if (count($getCity) > 0) {
+
             $cityID = $getCity[0]->id;
             $getNearby = DB::table($this->tbl_library)->where('libraryCity', $cityID)->get();
 
@@ -109,8 +110,8 @@ class LibraryController extends Controller
                 if (count($getProvince) > 0) {
 
                     $provinceID = $getProvince[0]->id;
-
                     $getNearby = DB::table($this->tbl_library)->where('libraryProvince', $provinceID)->get();
+
                     if (count($getNearby) == 0) {
                         $getNearby = DB::table($this->tbl_library)->limit(5)->get();
                     }
@@ -122,19 +123,21 @@ class LibraryController extends Controller
         } else {
             $getProvince = DB::table($this->tbl_provinces)->where('name', 'like', '%' . $province . '%')->get();
             if (count($getProvince) > 0) {
+
                 $provinceID = $getProvince[0]->id;
                 $getNearby = DB::table($this->tbl_library)->where('libraryProvince', $provinceID)->get();
 
                 if (count($getNearby) == 0) {
                     $getNearby = DB::table($this->tbl_library)->limit(5)->get();
                 }
+
             } else {
                 $getNearby = DB::table($this->tbl_library)->limit(5)->get();
             }
         }
 
-        $getNearby = json_decode(json_encode($getNearby), true);
+        $data = json_decode(json_encode($getNearby), true);
 
-        return response()->json($getNearby, 200);
+        return response()->json($data, 200);
     }
 }

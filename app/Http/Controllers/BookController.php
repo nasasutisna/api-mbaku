@@ -11,8 +11,6 @@ use Storage;
 
 class BookController extends Controller
 {
-    public $tbl_feedback = 'feedback';
-
     public function __construct()
     {
         $this->category = DB::table('category');
@@ -37,7 +35,7 @@ class BookController extends Controller
         //validate most search
         if ($keyword != null){
             $checkBookTitle = $this->most_search->where("bookTitle", $keyword)->first();
-            
+
             //update searchValue
             if ($checkBookTitle != null){
                 $searchValue = $this->most_search->where("bookTitle", $keyword)->value('searchValue');
@@ -46,7 +44,7 @@ class BookController extends Controller
                 $updateBookTitle = $this->most_search->where("bookTitle", $keyword)->update([
                     'searchValue' => $searchValue,
                 ]);
-    
+
             }
             //insert searchValue
             elseif($checkBookTitle == null){
@@ -377,7 +375,7 @@ class BookController extends Controller
         $query->limit(10);
         $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
         $query->leftjoin('library', 'library.libraryID', '=', 'book.libraryID');
-        $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity', );
+        $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity');
         $query->whereBetween('bookRelease', array($threeYR, $currentYR));
         $query = $query->orderBy('bookRelease', 'desc');
 

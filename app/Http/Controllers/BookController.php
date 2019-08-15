@@ -18,6 +18,7 @@ class BookController extends Controller
         $this->category = DB::table('category');
         $this->book = DB::table('book');
         $this->transaction_loan = DB::table('transaction_loan');
+        $this->most_search = DB::table('most_search');
     }
 
     public function getBookList(Request $request)
@@ -32,6 +33,29 @@ class BookController extends Controller
         $keyword = $request->input('keyword');
 
         $skip = ($page == 1) ? $page-1 : (($page-1) * $limit);
+
+        //validate most search
+        if ($keyword != null){
+            $checkBookTitle = $this->most_search->where("bookTitle", $keyword)->first();
+            
+            //update searchValue
+            if ($checkBookTitle != null){
+                $searchValue = $this->most_search->where("bookTitle", $keyword)->value('searchValue');
+                $searchValue = $searchValue + 1;
+
+                $updateBookTitle = $this->most_search->where("bookTitle", $keyword)->update([
+                    'searchValue' => $searchValue,
+                ]);
+    
+            }
+            //insert searchValue
+            elseif($checkBookTitle == null){
+                $saveBookTitle = $this->most_search->insert([
+                    'bookTitle' => $keyword,
+                    'searchValue' => 1
+                ]);
+            }
+        }
 
 
         $query = $this->book;
@@ -62,8 +86,8 @@ class BookController extends Controller
 
         // searching
         if ($keyword != '' && $keyword != 'undefined') {
-            $query = $query->where('book.bookTitle', 'like', '%' . $keyword . '%');
-            $query = $query->orWhere('book.bookWriter', 'like', '%' . $keyword . '%');
+            $query = $query->where('book.bookTitle', $keyword);
+            // $query = $query->orWhere('book.bookWriter', 'like', '%' . $keyword . '%');
             $count_page = count($query->get());
         }
 
@@ -344,13 +368,8 @@ class BookController extends Controller
 
     public function getNewBook()
     {
-        $newRelease1 = $this->book->select('bookRelease')->distinct()->orderBy('bookRelease', 'desc')->value('bookRelease');
-        $convert = (int)$newRelease1;
-        $newRelease2 = $convert - 1;
-        $newRelease = array(
-            $newRelease1,
-            $newRelease2
-        );
+        $currentYR = date('Y');
+        $threeYR = $currentYR - 3;
 
         $query = $this->book;
         $query->select('book.*', 'category.categoryTitle', 'library.libraryName', 'library.libraryCity', 'regencies.name');
@@ -358,8 +377,8 @@ class BookController extends Controller
         $query->limit(10);
         $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
         $query->leftjoin('library', 'library.libraryID', '=', 'book.libraryID');
-        $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity');
-        $query->whereIn('bookRelease', $newRelease);
+        $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity', );
+        $query->whereBetween('bookRelease', array($threeYR, $currentYR));
         $query = $query->orderBy('bookRelease', 'desc');
 
         $query = $query->get();

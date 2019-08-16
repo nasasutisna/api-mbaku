@@ -407,5 +407,48 @@ class BookController extends Controller
         return response()->json($arrPage);
     }
 
+    public function getMostSearch()
+    {
+        $getBookTitle = $this->most_search->select('bookTitle')->where('searchValue', '>=', 3)->orderBy('searchValue', 'desc')->get('bookTitle');
+        $data = json_decode(json_encode($getBookTitle), true);
+       
+        $query = $this->book;
+        $query->select('book.*', 'category.categoryTitle', 'library.libraryName', 'library.libraryCity', 'regencies.name');
+        $query->selectRaw('COALESCE((SELECT SUM(feedback.feedBackValue) FROM feedback where feedback.ebookID = book.bookID),0) as feedback');
+        $query->limit(10);
+        $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
+        $query->leftjoin('library', 'library.libraryID', '=', 'book.libraryID');
+        $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity', );
+        $query->whereIn('bookTitle', $data);
+        $query = $query->orderBy('bookRelease', 'desc');
+
+        $query = $query->get();
+
+        $arrPage = [];
+        $arrTemp = [];
+        $key = 0;
+
+        if ($query) {
+            foreach ($query as $value) {
+                if (count($arrTemp) > 0) {
+                    if (count($arrTemp[$key]) < 5) {
+                        $arrPage[$key][] = $value;
+                        $arrTemp[$key][] = $value;
+                    } else {
+                        $arrTemp = [];
+                        $key++;
+                    }
+                }
+
+                if (count($arrTemp) == 0) {
+                    $arrPage[$key][] = $value;
+                    $arrTemp[$key][] = $value;
+                }
+            }
+        }
+
+        return response()->json($arrPage);
+    }
+
 
 }

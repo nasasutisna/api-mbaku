@@ -35,6 +35,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::get('userBanner/{id}','MemberController@userBanner');
     Route::get('book/getNewBook','BookController@getNewBook');
     Route::post('library/getNearby','LibraryController@getNearby');
+    Route::get('book/getMostSearch','BookController@getMostSearch');
 });
 
 

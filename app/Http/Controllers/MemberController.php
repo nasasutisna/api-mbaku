@@ -239,24 +239,20 @@ class MemberController extends Controller
         $checkMemberPremium = $this->member_premium->where("memberID", $memberID)->where("memberApproval", 1)->first();
 
         if ($checkMemberPremium) {
-            $checkTransaction = $this->transaction_loan->where("memberID", $memberID)->where("transactionLoanStatus", 0)->first();
-
-            if ($checkTransaction) {
-                $isMemberPremium = 1;
-                 
-            } else {
-                $isMemberPremium = 1;
-            }
+            $isMemberPremium = 1;
         } else {
             $isMemberPremium = 0;
         }
 
         $query = $this->transaction_loan;
-        $query->where("memberID", $memberID)->where("transactionLoanStatus", 0);
+        $query->where("memberID", $memberID)
+        ->where("transactionLoanStatus", 0)
+        ->leftjoin('book','book.bookID','=','transaction_loan.bookID');
+
         $query = $query->first();
 
         $loanTrx = json_decode(json_encode($query), true);
-        
+
         $data = array(
             'isMemberPremium' => $isMemberPremium,
             'borrow' => $loanTrx,

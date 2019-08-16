@@ -424,10 +424,9 @@ class BookController extends Controller
 
     public function getMostSearch()
     {
-        // $highValue = $this->most_search->orderby('searchValue', 'desc')->value('searchValue');
-        $data = $this->most_search->select('bookTitle')->orderBy('searchValue', 'desc')->get();
-        $checkBookTitle = array('bookTitle' => $data);
-
+        $getBookTitle = $this->most_search->select('bookTitle')->where('searchValue', '>=', 3)->orderBy('searchValue', 'desc')->get('bookTitle');
+        $data = json_decode(json_encode($getBookTitle), true);
+       
         $query = $this->book;
         $query->select('book.*', 'category.categoryTitle', 'library.libraryName', 'library.libraryCity', 'regencies.name');
         $query->selectRaw('COALESCE((SELECT SUM(feedback.feedBackValue) FROM feedback where feedback.ebookID = book.bookID),0) as feedback');
@@ -435,7 +434,7 @@ class BookController extends Controller
         $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
         $query->leftjoin('library', 'library.libraryID', '=', 'book.libraryID');
         $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity', );
-        $query->whereIn('bookTitle', $checkBookTitle );
+        $query->whereIn('bookTitle', $data);
         $query = $query->orderBy('bookRelease', 'desc');
 
         $query = $query->get();

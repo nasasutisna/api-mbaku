@@ -33,6 +33,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('register','RegisterController@registerUser');
     Route::get('userBanner/{id}','MemberController@userBanner');
     Route::get('book/getNewBook','BookController@getNewBook');
+    Route::get('book/getMostSearch','BookController@getMostSearch');
 });
 
 

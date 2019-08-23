@@ -16,6 +16,36 @@ class LibraryController extends Controller
 
     }
 
+    public function getListLibrary(Request $request)
+    {
+        $page = $request->input('page') ? $request->input('page') : 1;
+        $limit = $request->input('limit') ? $request->input('limit') : 10;
+        $keyword = $request->input('keyword');
+
+        $skip = ($page == 1) ? $page - 1 : (($page - 1) * $limit);
+        $query = DB::table($this->tbl_library)
+                ->leftJoin('university','university.universityID','=','library.universityID');
+
+        $query->skip($skip);
+        $query->limit($limit);
+
+        $temp = $query;
+        $countRows = $temp->count();
+        $totalPage = $countRows <= $limit ? 1 : ceil($countRows / $limit);
+
+        $query = $query->get();
+
+        $data = array(
+            'data' => $query,
+            'limit' => (int) $limit,
+            'page' => (int) $page,
+            'total' => $countRows,
+            'totalPage' => $totalPage,
+        );
+
+        return response()->json($data);
+    }
+
     public function getDetailLibrary($id)
     {
         $libraryID = $id;

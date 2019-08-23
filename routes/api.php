@@ -19,7 +19,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::group(['prefix' => 'v1'], function () {
     Route::get('book/getPopularBook','BookController@getPopularBook');
-    Route::get('book/getBookList','BookController@getBookList');
+    Route::post('book/getBookList','BookController@getBookList');
     Route::get('ebook/getEbookList','EbookController@getEbookList');
     Route::get('book/searchTitle','BookController@searchTitle');
     Route::post('book/store','BookController@store');
@@ -35,7 +35,9 @@ Route::group(['prefix' => 'v1'], function () {
     Route::get('userBanner/{id}','MemberController@userBanner');
     Route::get('book/getNewBook','BookController@getNewBook');
     Route::post('library/getNearby','LibraryController@getNearby');
+    Route::post('library/getListLibrary','LibraryController@getListLibrary');
     Route::get('book/getMostSearch','BookController@getMostSearch');
+    Route::post('category/getCategory','CategoryController@getCategory');
 });
 
 

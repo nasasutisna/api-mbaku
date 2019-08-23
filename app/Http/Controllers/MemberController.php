@@ -109,7 +109,7 @@ class MemberController extends Controller
         }
 
         if ($photo) {
-            $record['photo'] = 'storage/app/public/profile/' . $filename;
+            $record['photo'] = $filename;
         }
 
         if ($memberSerialID == 0 || $memberSerialID == 'undefined') {

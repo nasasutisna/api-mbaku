@@ -25,19 +25,20 @@ class BookController extends Controller
         $page = $request->input('page') ? $request->input('page') : 1;
         $limit = $request->input('limit') ? $request->input('limit') : 10;
         $sortBy = $request->input('sortBy');
-        $filterEbook = $request->input('filterEbook');
+        $filterFromHome = $request->input('filterFromHome');
+        $filter = $request->input('filter');
 
         $filter_category = $request->input('category') ? json_decode($request->input('category'), true) : [];
         $keyword = $request->input('keyword');
 
-        $skip = ($page == 1) ? $page-1 : (($page-1) * $limit);
+        $skip = ($page == 1) ? $page - 1 : (($page - 1) * $limit);
 
         //validate most search
-        if ($keyword != null){
+        if ($keyword != null) {
             $checkBookTitle = $this->most_search->where("bookTitle", $keyword)->first();
 
             //update searchValue
-            if ($checkBookTitle != null){
+            if ($checkBookTitle != null) {
                 $searchValue = $this->most_search->where("bookTitle", $keyword)->value('searchValue');
                 $searchValue = $searchValue + 1;
 
@@ -47,18 +48,19 @@ class BookController extends Controller
 
             }
             //insert searchValue
-            elseif($checkBookTitle == null){
+            elseif ($checkBookTitle == null) {
                 $saveBookTitle = $this->most_search->insert([
                     'bookTitle' => $keyword,
-                    'searchValue' => 1
+                    'searchValue' => 1,
                 ]);
             }
         }
 
-
         $query = $this->book;
-        $query->select('category.categoryTitle', 'book.*');
+        $query->select('category.categoryTitle', 'book.*', 'library.libraryID', 'library.libraryName');
+        $query->selectRaw('COALESCE((SELECT COUNT(transaction_loan.bookID) FROM transaction_loan where transaction_loan.bookID = book.bookID),0) as loancount');
         $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
+        $query->leftjoin('library', 'library.libraryID', '=', 'book.libraryID');
 
         // sort by stok
         if ($sortBy != 'undefined' && $sortBy != '') {
@@ -66,27 +68,40 @@ class BookController extends Controller
             $query = $query->orderBy($sortBy[0], $sortBy[1]);
         }
 
-        // filter category
-        if ($filter_category != '' && count($filter_category) > 0) {
-            foreach ($filter_category as $key => $value) {
-                $fil_category = explode('|', $value);
-                $fil_category = $fil_category[0];
-                $arrCategory[] = $fil_category;
+        // filter
+        if ($filter) {
+            $categorySelected = $filter['categorySelected'];
+            $librarySelected = $filter['librarySelected'];
+
+            if ($categorySelected) {
+                $categoryID = $categorySelected['categoryID'];
+                $query = $query->where('book.categoryID', $categoryID);
             }
-            $query = $query->whereIn('book.categoryID', $arrCategory);
-            $count_page = count($query->get());
+
+            if ($librarySelected) {
+                $libraryID = $librarySelected['libraryID'];
+                $query = $query->where('book.libraryID', $libraryID);
+            }
         }
 
-        if ($filterEbook) {
-            $query = $query->where('ebook', '!=', '');
-            $count_page = count($query->get());
+        if ($filterFromHome == 'popular') {
+            $query = $query->orderBy('loancount', 'desc');
+        }
+
+        if ($filterFromHome == 'booknew') {
+            $query = $query->orderBy('bookTitle', 'asc');
+            $query = $query->orderBy('bookRelease', 'desc');
+        }
+
+        if ($filterFromHome == 'mostsearch') {
+            $getBookTitle = $this->most_search->select('bookTitle')->where('searchValue', '>=', 3)->orderBy('searchValue', 'desc')->get('bookTitle');
+            $data = json_decode(json_encode($getBookTitle), true);
+            $query = $query->whereIn('bookTitle', $data);
         }
 
         // searching
         if ($keyword != '' && $keyword != 'undefined') {
             $query = $query->where('book.bookTitle', $keyword);
-            // $query = $query->orWhere('book.bookWriter', 'like', '%' . $keyword . '%');
-            $count_page = count($query->get());
         }
 
         $query->skip($skip);
@@ -94,7 +109,7 @@ class BookController extends Controller
 
         $temp = $query;
         $countRows = $temp->count();
-        $totalPage = $countRows <= $limit ?  1 : ceil($countRows / $limit);
+        $totalPage = $countRows <= $limit ? 1 : ceil($countRows / $limit);
 
         $query = $query->get();
 
@@ -109,13 +124,13 @@ class BookController extends Controller
         return response()->json($data);
     }
 
-    public function getDetailBook( $id)
+    public function getDetailBook($id)
     {
         $bookID = $id;
 
         $query = $this->book->select('category.categoryTitle', 'book.*')
-                ->leftjoin('category', 'category.categoryID', '=', 'book.categoryID')
-                ->where('bookID', $bookID);
+            ->leftjoin('category', 'category.categoryID', '=', 'book.categoryID')
+            ->where('bookID', $bookID);
 
         $query = $query->first();
         $data = json_decode(json_encode($query), true);
@@ -190,40 +205,18 @@ class BookController extends Controller
     {
         $query = $this->book;
         $query->select('book.*', 'category.categoryTitle', 'library.libraryName', 'library.libraryCity', 'regencies.name');
-        $query->selectRaw('COALESCE((SELECT SUM(feedback.feedBackValue) FROM feedback where feedback.ebookID = book.bookID),0) as feedback');
-        $query->selectRaw('COALESCE((SELECT SUM(transaction_loan.bookID) FROM transaction_loan where transaction_loan.bookID = book.bookID),0) as loancount');
+        $query->selectRaw('COALESCE((SELECT COUNT(transaction_loan.bookID) FROM transaction_loan where transaction_loan.bookID = book.bookID),0) as loancount');
         $query->limit(10);
         $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
         $query->leftjoin('library', 'library.libraryID', '=', 'book.libraryID');
-        $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity');
-        $query = $query->orderBy('loancount', 'desc');
+        $query->leftjoin('regencies', 'regencies.id', '=', 'library.libraryCity');
+        $query = $query->orderBy('loancount', 'desc')
+            ->limit(50);
 
         $query = $query->get();
+        $data = json_decode(json_encode($query), true);
 
-        $arrPage = [];
-        $arrTemp = [];
-        $key = 0;
-
-        if ($query) {
-            foreach ($query as $value) {
-                if (count($arrTemp) > 0) {
-                    if (count($arrTemp[$key]) < 5) {
-                        $arrPage[$key][] = $value;
-                        $arrTemp[$key][] = $value;
-                    } else {
-                        $arrTemp = [];
-                        $key++;
-                    }
-                }
-
-                if (count($arrTemp) == 0) {
-                    $arrPage[$key][] = $value;
-                    $arrTemp[$key][] = $value;
-                }
-            }
-        }
-
-        return response()->json($arrPage);
+        return response()->json($data);
     }
 
     public function store(Request $request)
@@ -254,10 +247,9 @@ class BookController extends Controller
 
         $bookCover = $request->file('bookCover');
         if ($bookCover) {
-            $bookCoverName = str_replace(' ','_', $date.'_'.$bookCover->getClientOriginalName());
-            $bookCover->storeAs('public/bookcover/'.$libraryID, $bookCoverName);
+            $bookCoverName = str_replace(' ', '_', $date . '_' . $bookCover->getClientOriginalName());
+            $bookCover->storeAs('public/bookcover/' . $libraryID, $bookCoverName);
         }
-
 
         $content = array(
             'bookID' => $bookID,
@@ -341,16 +333,16 @@ class BookController extends Controller
         $keyword = $request->keyword;
         $page = $request->input('page') ? $request->input('page') : 1;
         $limit = $request->input('limit') ? $request->input('limit') : 10;
-        $skip = ($page == 1) ? $page-1 : (($page-1) * $limit);
+        $skip = ($page == 1) ? $page - 1 : (($page - 1) * $limit);
 
         $query = $this->book->selectRaw("DISTINCT(bookTitle) as bookTitle")
-            ->where('bookTitle', 'like', '%'.$keyword.'%')
+            ->where('bookTitle', 'like', '%' . $keyword . '%')
             ->skip($skip)
             ->limit($limit);
 
         $temp = $query;
         $countRows = $temp->count();
-        $totalPage = $countRows <= $limit ?  1 : ceil($countRows / $limit);
+        $totalPage = $countRows <= $limit ? 1 : ceil($countRows / $limit);
         $query = $query->get();
 
         $data = array(
@@ -358,7 +350,7 @@ class BookController extends Controller
             'limit' => (int) $limit,
             'page' => (int) $page,
             'total' => $countRows,
-            'totalPage' => $totalPage
+            'totalPage' => $totalPage,
         );
 
         return response()->json($data, 200);
@@ -375,7 +367,7 @@ class BookController extends Controller
         $query->limit(10);
         $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
         $query->leftjoin('library', 'library.libraryID', '=', 'book.libraryID');
-        $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity');
+        $query->leftjoin('regencies', 'regencies.id', '=', 'library.libraryCity');
         $query->whereBetween('bookRelease', array($threeYR, $currentYR));
         $query = $query->orderBy('bookRelease', 'desc');
 
@@ -411,14 +403,14 @@ class BookController extends Controller
     {
         $getBookTitle = $this->most_search->select('bookTitle')->where('searchValue', '>=', 3)->orderBy('searchValue', 'desc')->get('bookTitle');
         $data = json_decode(json_encode($getBookTitle), true);
-       
+
         $query = $this->book;
         $query->select('book.*', 'category.categoryTitle', 'library.libraryName', 'library.libraryCity', 'regencies.name');
         $query->selectRaw('COALESCE((SELECT SUM(feedback.feedBackValue) FROM feedback where feedback.ebookID = book.bookID),0) as feedback');
         $query->limit(10);
         $query->leftjoin('category', 'category.categoryID', '=', 'book.categoryID');
         $query->leftjoin('library', 'library.libraryID', '=', 'book.libraryID');
-        $query->leftjoin('regencies', 'regencies.id', '=','library.libraryCity', );
+        $query->leftjoin('regencies', 'regencies.id', '=', 'library.libraryCity');
         $query->whereIn('bookTitle', $data);
         $query = $query->orderBy('bookRelease', 'desc');
 
@@ -449,6 +441,5 @@ class BookController extends Controller
 
         return response()->json($arrPage);
     }
-
 
 }

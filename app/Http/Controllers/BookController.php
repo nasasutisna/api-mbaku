@@ -89,7 +89,7 @@ class BookController extends Controller
         }
 
         if ($filterFromHome == 'booknew') {
-            $query = $query->orderBy('bookTitle', 'asc');
+            // $query = $query->orderBy('bookTitle', 'asc');
             $query = $query->orderBy('bookRelease', 'desc');
         }
 
@@ -107,9 +107,9 @@ class BookController extends Controller
         $query->skip($skip);
         $query->limit($limit);
 
-        $temp = $query;
-        $countRows = $temp->count();
-        $totalPage = $countRows <= $limit ? 1 : ceil($countRows / $limit);
+
+        $total = DB::table('book')->count();
+        $totalPage = ceil($total / $limit);
 
         $query = $query->get();
 
@@ -117,7 +117,7 @@ class BookController extends Controller
             'data' => $query,
             'limit' => (int) $limit,
             'page' => (int) $page,
-            'total' => $countRows,
+            'total' => $total,
             'totalPage' => $totalPage,
         );
 
@@ -128,8 +128,9 @@ class BookController extends Controller
     {
         $bookID = $id;
 
-        $query = $this->book->select('category.categoryTitle', 'book.*')
+        $query = $this->book->select('category.categoryTitle', 'book.*','library.libraryName','library.libraryID','library.libraryMapsRoom')
             ->leftjoin('category', 'category.categoryID', '=', 'book.categoryID')
+            ->leftjoin('library', 'library.libraryID', '=', 'book.libraryID')
             ->where('bookID', $bookID);
 
         $query = $query->first();

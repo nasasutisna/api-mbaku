@@ -17,27 +17,31 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::group(['prefix' => 'v1'], function () {
+Route::group(['prefix' => 'v1', 'middleware' => ['auth:api'] ], function () {
     Route::get('book/getPopularBook','BookController@getPopularBook');
     Route::post('book/getBookList','BookController@getBookList');
     Route::get('ebook/getEbookList','EbookController@getEbookList');
     Route::get('book/searchTitle','BookController@searchTitle');
     Route::post('book/store','BookController@store');
     Route::get('book/detail/{id}','BookController@getDetailBook');
-    Route::post('login','LoginController@processLogin');
-    Route::get('login/generateToken','LoginController@generateToken');
     Route::get('ebook/detail/{id}','EbookController@getDetailEbook');
     Route::get('library/detail/{id}','LibraryController@getDetailLibrary');
     Route::post('library/store','LibraryController@store');
     Route::get('loanTransaction/user/{id}','LoanTransactionController@getLoanTransaction');
     Route::get('historyTransaction/user/{id}','LoanTransactionController@getHistoryTransaction');
-    Route::post('register','RegisterController@registerUser');
     Route::get('userBanner/{id}','MemberController@userBanner');
     Route::get('book/getNewBook','BookController@getNewBook');
     Route::post('library/getNearby','LibraryController@getNearby');
     Route::post('library/getListLibrary','LibraryController@getListLibrary');
     Route::get('book/getMostSearch','BookController@getMostSearch');
     Route::post('category/getCategory','CategoryController@getCategory');
+});
+
+Route::group(['prefix' => 'v1'], function () {
+    Route::post('login','LoginController@processLogin');
+    Route::get('login/generateToken','LoginController@generateToken');
+    Route::post('register','RegisterController@registerUser');
+
 });
 
 

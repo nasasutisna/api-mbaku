@@ -5,6 +5,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use GuzzleHttp\Client;
+
+
 class LoginController extends Controller
 {
     public function __construct()
@@ -48,7 +51,23 @@ class LoginController extends Controller
                 }
 
                 $isLogin = $verify;
-                $token = $this->generateToken();
+                
+                //start generate token
+                $http = new Client;
+                $response = $http->post('http://localhost:8000/oauth/token', [
+                    'form_params' => [
+                        'grant_type' => 'password',
+                        'client_id' => '2',
+                        'client_secret' => 'HT7xGudvaALL0unLTFN6x10QAKvjLVJYBIBBv3jX',
+                        'username' => $request->email,
+                        'password' => $request->password,
+                        'scope' => '',
+                    ],
+                ]);
+
+                $token = json_decode((string) $response->getBody(), true);
+
+                //end generate token
             }
             else{
                 $isLogin = false;
@@ -71,7 +90,7 @@ class LoginController extends Controller
             ),
         );
 
-        return response()->json($data,$status);
+        return response()->json($data,$status,$token);
     }
 
     public function generateToken(){

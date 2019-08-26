@@ -24,14 +24,19 @@ class LibraryController extends Controller
 
         $skip = ($page == 1) ? $page - 1 : (($page - 1) * $limit);
         $query = DB::table($this->tbl_library)
-                ->leftJoin('university','university.universityID','=','library.universityID');
+                ->select('library.*','university.*','regencies.name as city')
+                ->leftJoin('university','university.universityID','=','library.universityID')
+                ->leftJoin('regencies','regencies.id','=','library.libraryCity');
+
+        if($keyword){
+            $query = $query->where('libraryName','like','%'.$keyword.'%');
+        }
 
         $query->skip($skip);
         $query->limit($limit);
 
-        $temp = $query;
-        $countRows = $temp->count();
-        $totalPage = $countRows <= $limit ? 1 : ceil($countRows / $limit);
+        $total = DB::table('library')->count();
+        $totalPage = ceil($total / $limit);
 
         $query = $query->get();
 
@@ -39,7 +44,7 @@ class LibraryController extends Controller
             'data' => $query,
             'limit' => (int) $limit,
             'page' => (int) $page,
-            'total' => $countRows,
+            'total' => $total,
             'totalPage' => $totalPage,
         );
 
@@ -51,8 +56,9 @@ class LibraryController extends Controller
         $libraryID = $id;
 
         $query = DB::table($this->tbl_library);
-        $query->select('library.*', 'university.universityName');
+        $query->select('library.*', 'university.universityName','regencies.name as libraryCity');
         $query->leftjoin('university', 'university.universityID', '=', 'library.universityID');
+        $query->leftjoin('regencies', 'regencies.id', '=', 'library.libraryCity');
         $query->where('libraryID', $libraryID);
 
         $query = $query->first();

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use GuzzleHttp\Client;
+use App\User;
 
 
 class LoginController extends Controller
@@ -54,7 +55,7 @@ class LoginController extends Controller
                 
                 //start generate token
                 $http = new Client;
-                $response = $http->post('http://localhost:8000/oauth/token', [
+                $getToken = $http->post('http://localhost:8000/oauth/token', [
                     'form_params' => [
                         'grant_type' => 'password',
                         'client_id' => '2',
@@ -65,7 +66,7 @@ class LoginController extends Controller
                     ],
                 ]);
 
-                $token = json_decode((string) $response->getBody(), true);
+                $token = json_decode((string) $getToken->getBody(), true);
 
                 //end generate token
             }
@@ -96,6 +97,30 @@ class LoginController extends Controller
     public function generateToken(){
         $token = 'MBAKU-'.hash('sha256', Str::random(32));
         return $token;
+    }
+
+    public function invalidToken(Request $request){
+
+        $data = [];
+        $isToken = false;
+        $status = 401;
+        $msg = 'Unauthorization';
+
+        $data = array(
+            'status' => $status,
+            'msg' => $msg,
+            'isToken' => $isToken
+        );
+
+        return response()->json($data);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->token()->revoke();
+        return response()->json([
+            'message' => 'Successfully logged out'
+        ]);
     }
 
 }

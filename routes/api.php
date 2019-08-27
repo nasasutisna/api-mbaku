@@ -35,13 +35,14 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api'] ], function () {
     Route::post('library/getListLibrary','LibraryController@getListLibrary');
     Route::get('book/getMostSearch','BookController@getMostSearch');
     Route::post('category/getCategory','CategoryController@getCategory');
+    Route::get('logout', 'LoginController@logout');
 });
 
 Route::group(['prefix' => 'v1'], function () {
     Route::post('login','LoginController@processLogin');
     Route::get('login/generateToken','LoginController@generateToken');
     Route::post('register','RegisterController@registerUser');
-
+    Route::get('invalidToken','LoginController@invalidToken')->name('invalid-token');;
 });
 
 

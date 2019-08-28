@@ -7,6 +7,8 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use GuzzleHttp\Client;
 use App\User;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 
 class LoginController extends Controller
@@ -25,6 +27,7 @@ class LoginController extends Controller
         $status = 200;
         $token   = '';
         $userLogin = [];
+        $getToken = [];
 
         $email = $request->input('email');
         $password = $request->input('password');
@@ -52,23 +55,24 @@ class LoginController extends Controller
                 }
 
                 $isLogin = $verify;
-                
+
                 //start generate token
-                $http = new Client;
-                $getToken = $http->post('http://localhost:8000/oauth/token', [
-                    'form_params' => [
-                        'grant_type' => 'password',
-                        'client_id' => '2',
-                        'client_secret' => 'HT7xGudvaALL0unLTFN6x10QAKvjLVJYBIBBv3jX',
-                        'username' => $request->email,
-                        'password' => $request->password,
-                        'scope' => '',
-                    ],
-                ]);
+                $credentials = request(['email', 'password']);
+                if(Auth::attempt($credentials)){
+                    $user = $request->user();
+                    $tokenResult = $user->createToken('Personal Access Token');
+                    $token = $tokenResult->token;
 
-                $token = json_decode((string) $getToken->getBody(), true);
-
+                    $getToken = array(
+                        'access_token' => $tokenResult->accessToken,
+                        'token_type' => 'Bearer',
+                        'expires_at' => Carbon::parse(
+                            $tokenResult->token->expires_at
+                        )->toDateTimeString()
+                    );
+                }
                 //end generate token
+                
             }
             else{
                 $isLogin = false;
@@ -82,16 +86,19 @@ class LoginController extends Controller
             $msg = 'Email tidak terdaftar';
         }
 
+        
+
         $data = array(
             'msg' => $msg,
             'user' => $userLogin,
+            'token' => $getToken,
             'isLogin' => array(
                 'status' => $isLogin,
-                'token' => $token
             ),
         );
 
-        return response()->json($data,$status,$token);
+        
+        return response()->json($data,$status);
     }
 
     public function generateToken(){

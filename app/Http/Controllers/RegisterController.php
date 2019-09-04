@@ -5,6 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\User;
+use Auth;
+use Validator;
+use Illuminate\Foundation\Auth\VerifiesEmails;
+use Illuminate\Auth\Events\Verified;
+
 class RegisterController extends Controller
 {
     public function __construct()
@@ -45,8 +51,13 @@ class RegisterController extends Controller
                     'role' => 0,
                 ]);
 
+                if(Auth::attempt(['email' => request('email'), 'password' => request('password')])){
+                    $user = Auth::user();
+                    $user->sendApiEmailVerificationNotification();
+                }
+
                 if ($users) {
-                    $msg = 'success';
+                    $msg = 'email verification has been sent to your email address';
                 } else {
                     $status = 500;
                 }

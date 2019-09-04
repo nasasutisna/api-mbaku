@@ -42,7 +42,9 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('login','LoginController@processLogin');
     Route::get('login/generateToken','LoginController@generateToken');
     Route::post('register','RegisterController@registerUser');
-    Route::get('invalidToken','LoginController@invalidToken')->name('invalid-token');;
+    Route::get('invalidToken','LoginController@invalidToken')->name('invalid-token');
+    Route::get('email/verify/{id}', 'VerificationApiController@verify')->name('verificationapi.verify');
+    Route::get('email/resend', 'VerificationApiController@resend')->name('verificationapi.resend');
 });
 
 

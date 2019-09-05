@@ -89,7 +89,6 @@ class BookController extends Controller
         }
 
         if ($filterFromHome == 'booknew') {
-            // $query = $query->orderBy('bookTitle', 'asc');
             $query = $query->orderBy('bookRelease', 'desc');
         }
 
@@ -104,12 +103,11 @@ class BookController extends Controller
             $query = $query->where('book.bookTitle', $keyword);
         }
 
+        $total = $query->count();
+        $totalPage = ceil($total / $limit);
+
         $query->skip($skip);
         $query->limit($limit);
-
-
-        $total = DB::table('book')->count();
-        $totalPage = ceil($total / $limit);
 
         $query = $query->get();
 
@@ -255,7 +253,6 @@ class BookController extends Controller
         $content = array(
             'bookID' => $bookID,
             'bookTitle' => $bookTitle,
-            'categoryID' => $categoryID,
             'bookWriter' => $bookWriter,
             'bookDescription' => $bookDescription,
             'bookRelease' => $bookRelease,

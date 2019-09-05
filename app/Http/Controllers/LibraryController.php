@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Library;
+use App\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class LibraryController extends Controller
 {
     public $tbl_library = 'library';
+    public $tbl_setting = 'setting';
     public $tbl_regencies = 'regencies';
     public $tbl_provinces = 'provinces';
 
@@ -24,12 +27,12 @@ class LibraryController extends Controller
 
         $skip = ($page == 1) ? $page - 1 : (($page - 1) * $limit);
         $query = DB::table($this->tbl_library)
-                ->select('library.*','university.*','regencies.name as city')
-                ->leftJoin('university','university.universityID','=','library.universityID')
-                ->leftJoin('regencies','regencies.id','=','library.libraryCity');
+            ->select('library.*', 'university.*', 'regencies.name as city')
+            ->leftJoin('university', 'university.universityID', '=', 'library.universityID')
+            ->leftJoin('regencies', 'regencies.id', '=', 'library.libraryCity');
 
-        if($keyword){
-            $query = $query->where('libraryName','like','%'.$keyword.'%');
+        if ($keyword) {
+            $query = $query->where('libraryName', 'like', '%' . $keyword . '%');
         }
 
         $query->skip($skip);
@@ -56,7 +59,7 @@ class LibraryController extends Controller
         $libraryID = $id;
 
         $query = DB::table($this->tbl_library);
-        $query->select('library.*', 'university.universityName','regencies.name as libraryCity');
+        $query->select('library.*', 'university.universityName', 'regencies.name as libraryCity');
         $query->leftjoin('university', 'university.universityID', '=', 'library.universityID');
         $query->leftjoin('regencies', 'regencies.id', '=', 'library.libraryCity');
         $query->where('libraryID', $libraryID);
@@ -75,13 +78,13 @@ class LibraryController extends Controller
         $libraryMapsRoomName = '';
         $date = date('Ymdhis');
 
-        $libraryPhoto = $request->file('libraryPhoto');
+        $libraryPhoto = ($request->file('libraryPhoto')) ? $request->file('libraryPhoto') : "";
         if ($libraryPhoto) {
             $libraryPhotoName = str_replace(' ', '_', $date . '_' . $libraryPhoto->getClientOriginalName());
             $libraryPhoto->storeAs('public/library', $libraryPhotoName);
         }
 
-        $libraryMapsRoom = $request->file('libraryMapsRoom');
+        $libraryMapsRoom =($request->file('libraryMapsRoom')) ?  $request->file('libraryMapsRoom') : "";
         if ($libraryMapsRoom) {
             $libraryMapsRoomName = str_replace(' ', '_', $date . '_mapsroom_' . $libraryMapsRoom->getClientOriginalName());
             $libraryMapsRoom->storeAs('public/library', $libraryMapsRoomName);
@@ -99,25 +102,62 @@ class LibraryController extends Controller
         $libraryProvince = $request->input('libraryProvince');
         $libraryLatLong = $request->input('libraryLatLong');
 
-        $content = array(
-            'universityID' => $universityID,
-            'libraryName' => $libraryName,
-            'libraryEmail' => $libraryEmail,
-            'libraryPhone' => $libraryPhone,
-            'libraryAddress' => $libraryAddress,
-            'libraryCity' => $libraryCity,
-            'libraryProvince' => $libraryProvince,
-            'libraryLatLong' => $libraryLatLong,
-            'libraryPhoto' => $libraryPhotoName,
-            'libraryMapsRoom' => $libraryMapsRoomName,
-            'libraryJoinDate' => date('Y-m-d'),
-        );
+        $library = new Library();
 
         if ($isUpdate == 'true') {
             $libraryID = $request->input('libraryID');
-            DB::table($this->tbl_library)->where('libraryID', $libraryID)->update($content);
+            $update = $library::find($libraryID);
+
+            $update->universityID = $universityID;
+            $update->libraryName = $libraryName;
+            $update->libraryEmail = $libraryEmail;
+            $update->libraryPhone = $libraryPhone;
+            $update->libraryAddress = $libraryAddress;
+            $update->libraryCity = $libraryCity;
+            $update->libraryProvince = $libraryProvince;
+            $update->libraryLatLong = $libraryLatLong;
+            $update->libraryPhoto = $libraryPhotoName;
+            $update->libraryMapsRoom = $libraryMapsRoomName;
+            $update->libraryJoinDate = date('Y-m-d');
+
+            $save = $update->save();
+            // DB::table($this->tbl_library)->where('libraryID', $libraryID)->update($content);
         } else {
-            DB::table($this->tbl_library)->insert($content);
+            $library->universityID = $universityID;
+            $library->libraryName = $libraryName;
+            $library->libraryEmail = $libraryEmail;
+            $library->libraryPhone = $libraryPhone;
+            $library->libraryAddress = $libraryAddress;
+            $library->libraryCity = $libraryCity;
+            $library->libraryProvince = $libraryProvince;
+            $library->libraryLatLong = $libraryLatLong;
+            $library->libraryPhoto = $libraryPhotoName;
+            $library->libraryMapsRoom = $libraryMapsRoomName;
+            $library->libraryJoinDate = date('Y-m-d');
+
+            $save = $library->save();
+
+            $setOpHours = ($request->setOpHour) ? $request->setOpHour : "";
+            $loanFee = ($request->loanFee) ? $request->loanFee : 0;
+            $dueDateFee = ($request->dueDateFee) ? $request->dueDateFee : 0;
+            $calculateDueDate = ($request->calculateDueDate) ? $request->calculateDueDate : ""; // day , week , mounth, year
+
+            $loanFee = $request->loanFee;
+
+            if ($save) {
+                $setting = new Setting;
+
+                $arrData = Array(
+                    'operationalHours' =>  $setOpHours,
+                    'loanFee' =>  $loanFee,
+                    'dueDateFee' =>  $dueDateFee,
+                    'calculateDueDate' =>  $calculateDueDate,
+                );
+
+                $setting->libraryID = $library->id;
+                $setting->settingValue = json_encode($arrData);
+                $setting->save();
+            }
         }
 
         $msg = 'Data berhasil disimpan';

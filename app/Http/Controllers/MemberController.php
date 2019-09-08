@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class MemberController extends Controller
 {
@@ -260,5 +261,126 @@ class MemberController extends Controller
 
         return response()->json($data);
 
+    }
+
+    public function upgradeUserPremium(Request $request)
+    {
+        
+        $msg = '';
+        $photoKTP1 = '';
+        $photoKTP2= '';
+        $status = 200;
+        $date = date('Ymdhis');
+
+        $memberID = $request->input('memberID');
+        $memberPhotoKTP1 = $request->file('memberPhotoKTP1');
+        $memberPhotoKTP2 = $request->file('memberPhotoKTP2');
+        $emergencyName  = $request->input('emergencyName');
+        $emergencyNumber = $request->input('emergencyNumber');
+        $emergencyRole = $request->input('emergencyRole');
+
+        if ($memberPhotoKTP1 && $memberPhotoKTP2) {
+            $photoKTP1 = str_replace(' ', '_', $date . '_' . $memberPhotoKTP1->getClientOriginalName());
+            $memberPhotoKTP1->storeAs('public/memberPremium/' . $memberID, $photoKTP1);
+
+            $photoKTP2 = str_replace(' ', '_', $date . '_' . $memberPhotoKTP2->getClientOriginalName());
+            $memberPhotoKTP2->storeAs('public/memberPremium/' . $memberID, $photoKTP2);
+        }
+
+        $content = array(
+            'memberID' => $memberID,
+            'memberPhotoKTP1' => $photoKTP1,
+            'memberPhotoKTP2' => $photoKTP2,
+            'emergencyName' => $emergencyName,
+            'emergencyNumber' => $emergencyNumber,
+            'emergencyRole' => $emergencyRole,
+            'memberPremiumSaldo' => 0,
+            'memberApproval' => 1
+        );
+
+        $query = $this->member_premium->insert($content);
+
+        if ($query){
+            $member = DB::table('member');
+            $member->select('member_Premium.*', 'member.*');
+            $member->leftjoin('member_Premium', 'member_Premium.memberID', '=', 'member.memberID');
+            $member->where("member.memberID", $memberID);
+            $member = $member->get();
+
+            foreach($member as $d){
+                $data = [
+                    'memberPremiumID' => $d->memberPremiumID,
+                    'emergencyName' => $d->emergencyName,
+                    'emergencyNumber' => $d->emergencyNumber,
+                    'emergencyRole' => $d->emergencyRole,
+                    'memberID' => $d->memberID,
+                    'memberFirstName' => $d->memberFirstName,
+                    'memberLastName' => $d->memberLastName,
+                    'memberGender' => $d->memberGender,
+                    'memberPhone' => $d->memberPhone,
+                    'memberEmail' => $d->memberEmail,
+                    'memberAddress' => $d->memberAddress
+                ];
+            
+            }
+
+            Mail::send('approval', $data, function($message) use ($memberID, $photoKTP1, $photoKTP2 ){
+                $message->to('mbakuteam@gmail.com', 'Admin MBAKU')->subject('[MBAKU] Approval Upgrade Member Premium');
+                $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$photoKTP1));
+                $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$photoKTP2));
+                
+            });
+            
+            $msg = 'Request has been sent';
+        }
+        else {
+            $msg = 'Request failed to sent';
+            $status = 500;
+        }
+        
+        $data = array(
+            'msg' => $msg,
+            'status' => $status
+        );
+
+        return response()->json($data);
+    }
+
+    public function memberApproved($memberPremiumID)
+    {
+        $query = $this->member_premium->where('memberPremiumID', $memberPremiumID)->update([
+            'memberApproval' => 2
+            ]);
+        
+        if($query){
+            $status = 200;
+            $msg = 'Request has approved';
+            
+        }
+        else{
+            $status = 500;
+            $msg = 'approval is error';
+        }
+
+        return view('EmailVerified', ['status' => $status, 'msg' => $msg]);
+    }
+
+    public function memberRejected($memberPremiumID)
+    {
+        $query = $this->member_premium->where('memberPremiumID', $memberPremiumID)->update([
+            'memberApproval' => 3
+            ]);
+        
+        if($query){
+            $status = 200;
+            $msg = 'Request has rejected';
+            
+        }
+        else{
+            $status = 500;
+            $msg = 'reject is error';
+        }
+
+        return view('EmailVerified', ['status' => $status, 'msg' => $msg]);
     }
 }

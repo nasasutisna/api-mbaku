@@ -38,6 +38,8 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api'] ], function () {
     Route::get('book/getMostSearch','BookController@getMostSearch');
     Route::post('category/getCategory','CategoryController@getCategory');
     Route::get('logout', 'LoginController@logout');
+    Route::post('member/upgrade','MemberController@upgradeUserPremium');
+    
 });
 
 Route::group(['prefix' => 'v1'], function () {
@@ -47,6 +49,8 @@ Route::group(['prefix' => 'v1'], function () {
     Route::get('invalidToken','LoginController@invalidToken')->name('invalid-token');
     Route::get('email/verify/{id}', 'VerificationApiController@verify')->name('verificationapi.verify');
     Route::get('email/resend', 'VerificationApiController@resend')->name('verificationapi.resend');
+    Route::get('member/rejected/{memberPremiumID}','MemberController@memberRejected');
+    Route::get('member/approved/{memberPremiumID}','MemberController@memberApproved');
 });
 
 

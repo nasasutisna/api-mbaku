@@ -22,8 +22,19 @@
 
 
     <div class="container">
-        <h1>Verifikasi Email Berhasil</h1><br>
-        <p>Selamat Verifikasi E-mail Anda telah berhasil. silahkan buka aplikasi Mbaku kembali untuk dapat melakukan transaksi</p>
+        @if( $status == 200)
+            <h1>{{$msg}}</h1><br>
+     
+        @elseif( $status == 400 )
+            <h1>{{$msg}}</h1><br>
+
+        @elseif( $status == 500 )
+        <h1>{{$msg}}</h1><br>
+        
+        @else
+            <h1>Verifikasi Email Berhasil</h1><br>
+            <p>Selamat Verifikasi E-mail Anda telah berhasil. silahkan buka aplikasi Mbaku kembali untuk dapat melakukan transaksi</p>
+        @endif
     </div>
 
     <div class="footer">

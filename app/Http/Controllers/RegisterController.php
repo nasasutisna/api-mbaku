@@ -27,7 +27,7 @@ class RegisterController extends Controller
         $status = 200;
         $uuid = Str::uuid();
         $checkExistMember = $this->users->where("email", $request->email)->first();
-        $memberID = 'member-' . $uuid . '-' . time();
+        $memberID = mt_rand(100,1000000000).time();
 
         if (!$checkExistMember) {
             $saveMember = $this->member->insert([

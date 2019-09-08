@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use function GuzzleHttp\json_decode;
+use function GuzzleHttp\json_encode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Storage;
 
 class EbookController extends Controller
 {
     public $tbl_ebook = 'ebook';
+    public $tbl_ebook_rentals = 'ebook_rentals';
     public $tbl_feedback = 'feedback';
 
     public function __construct()
@@ -170,6 +174,7 @@ class EbookController extends Controller
     {
         $msg = '';
         $ebookCoverName = '';
+        $ebookFileName = '';
         $status = 200;
         $date = date('Ymdhis');
         $uuid = Str::uuid();
@@ -196,6 +201,12 @@ class EbookController extends Controller
             $ebookCover->storeAs('public/ebookcover/' . $libraryID, $ebookCoverName);
         }
 
+        $ebookFile = $request->file('ebookFile');
+        if ($ebookFile) {
+            $ebookFileName = str_replace(' ', '_', $date . '_' . $ebookFile->getClientOriginalName());
+            $ebookFile->storeAs('public/ebook/' . $libraryID, $ebookFileName);
+        }
+
         $content = array(
             'ebookID' => $ebookID,
             'ebookTitle' => $ebookTitle,
@@ -207,6 +218,7 @@ class EbookController extends Controller
             'ebookPrice' => $ebookPrice,
             'categoryID' => $categoryID,
             'libraryID' => $libraryID,
+            'ebookFile' => $ebookFileName
         );
 
         if ($isUpdate == 'true') {;
@@ -252,4 +264,41 @@ class EbookController extends Controller
 
         return response()->json($data);
     }
+
+
+    public function getEbook(Request $request)
+    {
+        $filename = $request->input('filename');
+        $libraryID =  $request->input('libraryID')+0;
+
+        $path = 'ebook/'.$libraryID.'/'.$filename;
+        $file = Storage::disk('public')->path($path);
+
+        return response()->download($file);
+    }
+
+    public function checkAccessRead(Request $request)
+    {
+        $data = array();
+
+        $memberID = $request->input('memberID');
+        $ebookID =  $request->input('ebookID');
+        $date = date('Y-m-d');
+
+        $query =  DB::table($this->tbl_ebook_rentals)
+                ->where('memberID',$memberID)
+                ->where('ebookID',$ebookID)
+                ->where('expireDate','>=',$date)
+                ->first();
+
+        if($query){
+            $data['allowedRead'] = true;
+        }
+        else{
+            $data['allowedRead'] = false;
+        }
+
+        return response()->json($data, 200);
+    }
+
 }

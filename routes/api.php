@@ -27,6 +27,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api'] ], function () {
     Route::post('book/store','BookController@store');
     Route::get('book/detail/{id}','BookController@getDetailBook');
     Route::get('ebook/detail/{id}','EbookController@getDetailEbook');
+    Route::post('ebook/checkAccessRead','EbookController@checkAccessRead');
     Route::get('library/detail/{id}','LibraryController@getDetailLibrary');
     Route::post('library/store','LibraryController@store');
     Route::get('loanTransaction/user/{id}','LoanTransactionController@getLoanTransaction');
@@ -38,6 +39,12 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api'] ], function () {
     Route::get('book/getMostSearch','BookController@getMostSearch');
     Route::post('category/getCategory','CategoryController@getCategory');
     Route::get('logout', 'LoginController@logout');
+    Route::post('payment/ebook','PaymentController@purchase');
+    Route::post('ebook/getEbook','EbookController@getEbook');
+    Route::get('member/detail/{id}','MemberController@getDetail');
+    Route::post('member/update','MemberController@updateMember');
+    Route::post('member/profile/upload','MemberController@updatePhotoProfile');
+    Route::post('payment/ebook/save','PaymentController@savePaymentEbook');
 });
 
 Route::group(['prefix' => 'v1'], function () {

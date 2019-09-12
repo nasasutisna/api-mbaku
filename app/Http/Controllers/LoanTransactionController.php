@@ -13,12 +13,12 @@ class LoanTransactionController extends Controller
     public function __construct()
     {
         $this->transaction_loan = DB::table('transaction_loan');
+        $this->ebook_rental = DB::table('ebook_rentals');
+        $this->feedback = DB::table('feedback');
     }
 
-    public function getLoanTransaction($id)
+    public function getBookLoan($id)
     {
-        //List Transaksi Peminjaman
-
         $memberID = $id;
 
         $query = $this->transaction_loan;
@@ -33,15 +33,19 @@ class LoanTransactionController extends Controller
         $query->where('transactionLoanStatus', 0);
 
         $query = $query->get();
-        $data = json_decode(json_encode($query), true);
+        $total = count($query);
+        $book = json_decode(json_encode($query), true);
+
+        $data = array(
+            'book' => $book,
+            'bookTotal' => $total
+        );
 
         return response()->json($data);
     }
 
-    public function getHistoryTransaction($id)
+    public function getBookLoanHistory($id)
     {
-        //List Transaksi Pengembalian
-
         $memberID = $id;
 
         $query = $this->transaction_loan;
@@ -56,7 +60,58 @@ class LoanTransactionController extends Controller
         $query->where('transactionLoanStatus', 1);
 
         $query = $query->get();
-        $data = json_decode(json_encode($query), true);
+        $total = count($query);
+        $book = json_decode(json_encode($query), true);
+
+        $data = array(
+            'book' => $book,
+            'bookTotal' => $total
+        );
+
+        return response()->json($data);
+    }
+
+    public function getEbookRental($id)
+    {
+        $memberID = $id;
+
+        $query = $this->ebook_rental;
+        $query->select('ebook_rentals.*', 'ebook.*');
+        $query->selectRaw('COALESCE((SELECT SUM(feedback.feedBackValue) FROM feedback where feedback.ebookID = ebook.ebookID),0) as feedback');
+        $query->leftjoin('ebook', 'ebook.ebookID', '=',  'ebook_rentals.ebookID');
+        $query->where('ebook_rentals.memberID', $memberID);
+
+        $query = $query->get();
+        $total = count($query);
+        $ebook = json_decode(json_encode($query), true);
+
+        $data = array(
+            'ebook' => $ebook,
+            'ebookTotal' => $total
+        );
+
+        return response()->json($data);
+    }
+
+    public function getEbookWishlist($id)
+    {
+        $memberID = $id;
+
+        $query = $this->feedback;
+        $query->select('feedback.*', 'ebook.*');
+        $query->selectRaw('COALESCE((SELECT SUM(feedback.feedBackValue) FROM feedback where feedback.ebookID = ebook.ebookID),0) as feedback');
+        $query->leftjoin('ebook', 'ebook.ebookID', '=',  'feedback.ebookID');
+        $query->where('feedback.memberID', $memberID);
+        $query->where('feedback.feedBackValue', 1);
+
+        $query = $query->get();
+        $total = count($query);
+        $ebook = json_decode(json_encode($query), true);
+
+        $data = array(
+            'ebook' => $ebook,
+            'ebookTotal' => $total
+        );
 
         return response()->json($data);
     }

@@ -46,7 +46,11 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api'] ], function () {
     Route::post('member/profile/upload','MemberController@updatePhotoProfile');
     Route::post('payment/ebook/save','PaymentController@savePaymentEbook');
     Route::post('member/upgrade','MemberController@upgradeUserPremium');
-
+    Route::post('member/uploadPhotoKTP','MemberController@uploadPhotoKTP');
+    Route::post('member/checkMemberStatus','MemberController@checkMemberStatus');
+    Route::post('member/topUpSaldo','MemberController@topUpSaldo');
+    Route::post('member/saveSaldo','MemberController@saveSaldo');
+    Route::post('member/getStatusPayment','MemberController@getStatusPayment');
 });
 
 Route::group(['prefix' => 'v1'], function () {

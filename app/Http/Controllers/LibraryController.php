@@ -7,6 +7,8 @@ use App\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+use function GuzzleHttp\json_decode;
+
 class LibraryController extends Controller
 {
     public $tbl_library = 'library';
@@ -178,22 +180,22 @@ class LibraryController extends Controller
         if (count($getCity) > 0) {
 
             $cityID = $getCity[0]->id;
-            $getNearby = DB::table($this->tbl_library)->where('libraryCity', $cityID)->get();
+            $getNearby = DB::table($this->tbl_library)->where('libraryCity', $cityID);
 
-            if (count($getNearby) == 0) {
+            if ($getNearby->count() == 0) {
                 $getProvince = DB::table($this->tbl_provinces)->where('name', 'like', '%' . $province . '%')->get();
 
                 if (count($getProvince) > 0) {
 
                     $provinceID = $getProvince[0]->id;
-                    $getNearby = DB::table($this->tbl_library)->where('libraryProvince', $provinceID)->get();
+                    $getNearby = DB::table($this->tbl_library)->where('libraryProvince', $provinceID);
 
-                    if (count($getNearby) == 0) {
-                        $getNearby = DB::table($this->tbl_library)->limit(5)->get();
+                    if ($getNearby->count() == 0) {
+                        $getNearby = DB::table($this->tbl_library)->limit(5);
                     }
 
                 } else {
-                    $getNearby = DB::table($this->tbl_library)->limit(5)->get();
+                    $getNearby = DB::table($this->tbl_library)->limit(5);
                 }
             }
         } else {
@@ -201,19 +203,31 @@ class LibraryController extends Controller
             if (count($getProvince) > 0) {
 
                 $provinceID = $getProvince[0]->id;
-                $getNearby = DB::table($this->tbl_library)->where('libraryProvince', $provinceID)->get();
-
-                if (count($getNearby) == 0) {
-                    $getNearby = DB::table($this->tbl_library)->limit(5)->get();
+                $getNearby = DB::table($this->tbl_library)->where('libraryProvince', $provinceID);
+                if ($getNearby->count() == 0) {
+                    $getNearby = DB::table($this->tbl_library)->limit(5);
                 }
 
             } else {
-                $getNearby = DB::table($this->tbl_library)->limit(5)->get();
+                $getNearby = DB::table($this->tbl_library)->limit(5);
             }
         }
 
+        $getNearby = $getNearby->leftjoin('setting','setting.libraryID','=','library.libraryID');
+        $getNearby = $getNearby->get();
+
+
         $data = json_decode(json_encode($getNearby), true);
+        $data = $this->convertSetting($data);
 
         return response()->json($data, 200);
+    }
+
+    public function convertSetting($data){
+        foreach($data as $key=>$value){
+            $data[$key]['settingValue'] = $value['settingValue'] != null ? json_decode($value['settingValue']) : $value['settingValue'];
+        }
+
+        return $data;
     }
 }

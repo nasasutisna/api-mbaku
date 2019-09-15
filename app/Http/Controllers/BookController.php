@@ -181,25 +181,6 @@ class BookController extends Controller
         return response()->download($file);
     }
 
-    public function checkMyRate(Request $request)
-    {
-        $memberID = $request->input('memberID');
-        $bookID = $request->input('bookID');
-        $rate = 0;
-
-        $query = DB::table($this->tbl_feedback)->where('memberID', '=', $memberID)->where('bookID', '=', $bookID)->first();
-
-        if ($query) {
-            $rate = $query->rate;
-        }
-
-        $data = array(
-            'myRate' => $rate,
-        );
-
-        return response()->json($data);
-    }
-
     public function getPopularBook()
     {
         $query = $this->book;
@@ -274,44 +255,6 @@ class BookController extends Controller
         }
 
         $msg = 'Data berhasil disimpan';
-
-        $data = array(
-            'msg' => $msg,
-        );
-
-        return response()->json($data, $status);
-    }
-
-    public function addfeedback(Request $request)
-    {
-        $memberID = $request->input('memberID');
-        $bookID = $request->input('bookID');
-        $feedBackValue = $request->input('feedBackValue');
-
-        $check = DB::table($this->tbl_feedback)->where('memberID', '=', $memberID)->where('bookID', '=', $bookID)->first();
-
-        $content = array(
-            'memberID' => $memberID,
-            'bookID' => $bookID,
-            'rate' => $feedBackValue,
-        );
-
-        if ($check) {
-            $query = DB::table($this->tbl_feedback)
-                ->where('memberID', $memberID)
-                ->where('bookID', $bookID)
-                ->update(['rate' => $feedBackValue]);
-        } else {
-            $query = DB::table($this->tbl_feedback)->insert($content);
-        }
-
-        if ($query) {
-            $msg = 'Data berhasil disimpan';
-            $status = 200;
-        } else {
-            $status = 500;
-            $msg = 'gagal';
-        }
 
         $data = array(
             'msg' => $msg,

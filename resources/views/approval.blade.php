@@ -75,8 +75,8 @@
               <thead style="padding: 8px;">
                 <tr>
                   <th scope="col" colspan="2" class="text-right" style="padding: 15px;">
-                    <a href="http://localhost/api-perpustakaan/public/api/v1/member/approved/{{$memberPremiumID}}" style="color: white; background-color: #3490DC;border-top: 5px solid #3490DC;border-right: 18px solid #3490DC;border-bottom: 5px solid #3490DC;border-left: 18px solid #3490DC;" >TERIMA</a>
-                    <a href="http://localhost/api-perpustakaan/public/api/v1/member/rejected/{{$memberPremiumID}}" style="color: white; background-color: #E3342F;border-top: 5px solid #E3342F;border-right: 18px solid #E3342F;border-bottom: 5px solid #E3342F;border-left: 18px solid #E3342F;" >TOLAK</a>
+                    <a href="{{url('api/v1/member/approved/'.$memberPremiumID)}}" style="color: white; background-color: #3490DC;border-top: 5px solid #3490DC;border-right: 18px solid #3490DC;border-bottom: 5px solid #3490DC;border-left: 18px solid #3490DC;" >TERIMA</a>
+                    <a href="{{url('api/v1/member/rejected/'.$memberPremiumID)}}" style="color: white; background-color: #E3342F;border-top: 5px solid #E3342F;border-right: 18px solid #E3342F;border-bottom: 5px solid #E3342F;border-left: 18px solid #E3342F;" >TOLAK</a>
                     <!-- <button class="btn btn-success" name="isApprove" type="button" href="/member/approved/{{$memberPremiumID}}" >TERIMA</button>
                     <button class="btn btn-primary my-btn" name="isApprove"  type="button" href="/member/rejected/{{$memberPremiumID}}">TOLAK</button>  -->
                   </th>

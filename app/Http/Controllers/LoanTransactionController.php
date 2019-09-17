@@ -16,6 +16,7 @@ class LoanTransactionController extends Controller
         $this->ebook_rental = DB::table('ebook_rentals');
         $this->feedback = DB::table('feedback');
         $this->member_premium = DB::table('member_premium');
+        $this->library = DB::table('library');
     }
 
     public function getBookLoan($id)
@@ -132,6 +133,7 @@ class LoanTransactionController extends Controller
         $dueDate = $request->input('transactionLoanDueDate');
 
         $tempData = [];
+        //validation loanBook or return book
         if ($transaction == 'returnBook') {
             // return book transaction
             if (count($bookID) > 0) {
@@ -151,7 +153,8 @@ class LoanTransactionController extends Controller
             }
         }
         else{
-            $checkSaldo = $this->member_premium->where('memberID', $memberID)->first();
+            $member = $this->member_premium->where('memberID', $memberID)->first();
+            $library = $this->library->where('libraryID', $libraryID)->first();
             $checkLoanBook = $this->transaction_loan->where('memberID', $memberID)->where('transactionLoanStatus', 0)->first();
             $checkSetting = DB::table('setting')->select('settingValue')->where('libraryID',$libraryID)->first();
             $settingValue = json_decode($checkSetting->settingValue);
@@ -162,48 +165,86 @@ class LoanTransactionController extends Controller
                 $msg = 'this member is borrowing the book';
             }
             else{
-                //totalWithdrawal = bookTotal * loanFee
-                $totalWithdrawal = count($bookID) * $settingValue->loanFee;
+                //totalDebet = bookTotal * loanFee
+                $totalDebet = count($bookID) * $settingValue->loanFee;
 
                 //validation member saldo
-                if($checkSaldo->memberPremiumSaldo >= $totalWithdrawal){
-                    //  input book loan transaction
-                    if (count($bookID) > 0) {
-                        foreach ($bookID as $key => $value) {
-                            $tempData[$key]['libraryID'] = $libraryID;
-                            $tempData[$key]['memberID'] = $memberID;
-                            $tempData[$key]['bookID'] = $value['bookID'];
-                            $tempData[$key]['transactionLoanDate'] = $date;
-                            $tempData[$key]['transactionLoanDueDate'] = $dueDate;
-                            $this->updateStokBook('loanBook',$value['bookID']);
-                        }
+                if($member->memberPremiumSaldo >= $totalDebet){
+                    DB::beginTransaction();
 
-                        $save = DB::table('transaction_loan')->insert($tempData);
-
-                        //debet & update saldo member
-                        $withdrawal = $checkSaldo->memberPremiumSaldo -  $totalWithdrawal;
-                        $updateSaldo = $this->member_premium->where('memberID', $memberID)->update(['memberPremiumSaldo' => $withdrawal]);
-
-                        if($updateSaldo){
-                            //insert log payment book loan
-                            $dateTime = date('Ymdhis');
-                            if (count($bookID) > 0) {
-                                foreach ($bookID as $key => $value) {
-                                    $tempData2[$key]['libraryID'] = $libraryID;
-                                    $tempData2[$key]['memberID'] = $memberID;
-                                    $tempData2[$key]['bookID'] = $value['bookID'];
-                                    $tempData2[$key]['amount'] = $settingValue->loanFee;
-                                    $tempData2[$key]['paymentLoanDateTime'] = $dateTime;
-                                }
-                                $payment = DB::table('payment_loan')->insert($tempData2);
+                    try {
+                        //  input book loan transaction
+                        if (count($bookID) > 0) {
+                            foreach ($bookID as $key => $value) {
+                                $tempData[$key]['libraryID'] = $libraryID;
+                                $tempData[$key]['memberID'] = $memberID;
+                                $tempData[$key]['bookID'] = $value['bookID'];
+                                $tempData[$key]['transactionLoanDate'] = $date;
+                                $tempData[$key]['transactionLoanDueDate'] = $dueDate;
+                                $this->updateStokBook('loanBook',$value['bookID']);
                             }
-                            
+
+                            $save = DB::table('transaction_loan')->insert($tempData);
+
+                            //debet & update saldo member
+                            $memberSaldo = $member->memberPremiumSaldo -  $totalDebet;
+                            $updateMember = $this->member_premium->where('memberID', $memberID)->update(['memberPremiumSaldo' => $memberSaldo]);
+
+                            //kredit & update saldo library
+                            $kreditLibrary = $totalDebet - ( $totalDebet * 0.1 ); //10% fee for MBAKU
+                            $librarySaldo = $library->librarySaldo + $kreditLibrary;
+                            $updateLibrary = DB::table('library')->where('libraryID', $libraryID)->update(['librarySaldo' => $librarySaldo]);
+
+                            if($updateMember && $updateLibrary){
+                                //insert log payment book loan
+                                $dateTime = date('Ymdhis');
+                                if (count($bookID) > 0) {
+                                    foreach ($bookID as $key => $value) {
+                                        $tempData2[$key]['libraryID'] = $libraryID;
+                                        $tempData2[$key]['memberID'] = $memberID;
+                                        $tempData2[$key]['bookID'] = $value['bookID'];
+                                        $tempData2[$key]['amount'] = $settingValue->loanFee;
+                                        $tempData2[$key]['paymentLoanDateTime'] = $dateTime;
+                                    }
+                                    $payment = DB::table('payment_loan')->insert($tempData2);
+                                }
+
+                                //insert member_saldo_log
+                                DB::table('member_saldo_log')->insert([
+                                    'memberID' => $memberID,
+                                    'nominal' => $totalDebet,
+                                    'saldoLogType' => 'Debet',
+                                    'paymentType' => 'Mbaku Wallet',
+                                ]);
+
+
+                                //insert library_saldo_log
+                                DB::table('library_saldo_log')->insert([
+                                    'libraryID' => $libraryID,
+                                    'nominal' => $kreditLibrary,
+                                    'saldoLogType' => 'Kredit',
+                                    'paymentType' => 'Mbaku Wallet',
+                                ]);
+
+                                //insert fee to mbaku_saldo_log
+                                $fee = $totalDebet * 0.1;
+                                DB::table('mbaku_saldo_log')->insert([
+                                    'nominal' => $fee,
+                                    'saldoLogType' => 'Kredit Fee',
+                                    'paymentType' => 'Mbaku Wallet',
+                                ]);     
+                            }
+
+                            DB::commit(); // all good
+                                
                             $msg = 'loan book is success';
                         }
-                        else{
-                            $status = 422;
-                            $msg = 'loan book is fail';
-                        }
+                    }
+                    catch (\Exception $e) {
+                        DB::rollback(); //// something went wrong
+
+                        $status = 422;
+                        $msg = 'loan book is fail';
                     }
                 }
                 else{

@@ -322,43 +322,53 @@ class MemberController extends Controller
             'memberApproval' => 0,
         );
 
-        $query = $this->member_premium->insert($content);
+        DB::beginTransaction();
 
-        if ($query) {
-            $member = DB::table('member');
-            $member->select('member_premium.*', 'member.*');
-            $member->leftjoin('member_premium', 'member_premium.memberID', '=', 'member.memberID');
-            $member->where("member.memberID", $memberID);
-            $member = $member->get();
+        try {
+            $query = $this->member_premium->insert($content);
 
-            foreach ($member as $d) {
-                $data = [
-                    'memberPremiumID' => $d->memberPremiumID,
-                    'emergencyName' => $d->emergencyName,
-                    'emergencyNumber' => $d->emergencyNumber,
-                    'emergencyRole' => $d->emergencyRole,
-                    'memberID' => $d->memberID,
-                    'memberFirstName' => $d->memberFirstName,
-                    'memberLastName' => $d->memberLastName,
-                    'memberGender' => $d->memberGender,
-                    'memberPhone' => $d->memberPhone,
-                    'memberEmail' => $d->memberEmail,
-                    'memberAddress' => $d->memberAddress,
-                    'image1' => $image1
-                ];
+            if ($query) {
+                $member = DB::table('member');
+                $member->select('member_premium.*', 'member.*');
+                $member->leftjoin('member_premium', 'member_premium.memberID', '=', 'member.memberID');
+                $member->where("member.memberID", $memberID);
+                $member = $member->get();
 
+                foreach ($member as $d) {
+                    $data = [
+                        'memberPremiumID' => $d->memberPremiumID,
+                        'emergencyName' => $d->emergencyName,
+                        'emergencyNumber' => $d->emergencyNumber,
+                        'emergencyRole' => $d->emergencyRole,
+                        'memberID' => $d->memberID,
+                        'memberFirstName' => $d->memberFirstName,
+                        'memberLastName' => $d->memberLastName,
+                        'memberGender' => $d->memberGender,
+                        'memberPhone' => $d->memberPhone,
+                        'memberEmail' => $d->memberEmail,
+                        'memberAddress' => $d->memberAddress,
+                        'image1' => $image1
+                    ];
+
+                }
+
+                Mail::send('approval', $data, function($message) use ($memberID, $image1, $image2 ){
+                    $message->from('donotreply@mbaku.co.id', 'Admin MBAKU');
+                    $message->to('mbakuteam@gmail.com', 'Admin MBAKU')->subject('[MBAKU] Approval Upgrade Member Premium');
+                    $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$image1));
+                    $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$image2));
+
+                });
+
+                
             }
-
-            Mail::send('approval', $data, function($message) use ($memberID, $image1, $image2 ){
-                $message->from('donotreply@mbaku.co.id', 'Admin MBAKU');
-                $message->to('mbakuteam@gmail.com', 'Admin MBAKU')->subject('[MBAKU] Approval Upgrade Member Premium');
-                $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$image1));
-                $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$image2));
-
-            });
+            DB::commit(); // all good
 
             $msg = 'Request has been sent';
-        } else {
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+
             $msg = 'Request failed to sent';
             $status = 500;
         }

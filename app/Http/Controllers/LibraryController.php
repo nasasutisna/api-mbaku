@@ -214,6 +214,7 @@ class LibraryController extends Controller
         }
 
         $getNearby = $getNearby->leftjoin('setting','setting.libraryID','=','library.libraryID');
+        $getNearby = $getNearby->select('library.*','setting.settingValue');
         $getNearby = $getNearby->get();
 
 

@@ -301,4 +301,61 @@ class EbookController extends Controller
         return response()->json($data, 200);
     }
 
+    public function addFeedBack(Request $request)
+    {
+        $memberID = $request->input('memberID');
+        $ebookID = $request->input('ebookID');
+        $feedBackValue = $request->input('feedBackValue');
+
+        $check = DB::table($this->tbl_feedback)->where('memberID', '=', $memberID)->where('ebookID', '=', $ebookID)->first();
+
+        $content = array(
+            'memberID' => $memberID,
+            'ebookID' => $ebookID,
+            'feedBackValue' => $feedBackValue,
+        );
+
+        if ($check) {
+            $query = DB::table($this->tbl_feedback)
+                ->where('memberID', $memberID)
+                ->where('ebookID', $ebookID)
+                ->update(['feedBackValue' => $feedBackValue]);
+        } else {
+
+            $query = DB::table($this->tbl_feedback)->insert($content);
+        }
+
+        if ($query) {
+            $msg = 'Data berhasil disimpan';
+            $status = 200;
+        } else {
+            $status = 422;
+            $msg = 'gagal';
+        }
+
+        $data = array(
+            'msg' => $msg,
+        );
+
+        return response()->json($data, $status);
+    }
+
+    public function checkMyFeedBack(Request $request)
+    {
+        $memberID = $request->input('memberID');
+        $ebookID = $request->input('ebookID');
+        $feed = 0;
+
+        $query = DB::table($this->tbl_feedback)->where('memberID', '=', $memberID)->where('ebookID', '=', $ebookID)->first();
+
+        if ($query) {
+            $feed = $query->feedBackValue;
+        }
+
+        $data = array(
+            'feed' => $feed,
+        );
+
+        return response()->json($data);
+    }
 }

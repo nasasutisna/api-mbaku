@@ -44,6 +44,8 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api'] ], function () {
     Route::get('logout', 'LoginController@logout');
     Route::post('payment/ebook','PaymentController@purchase');
     Route::post('ebook/getEbook','EbookController@getEbook');
+    Route::post('ebook/checkMyFeedBack','EbookController@checkMyFeedBack');
+    Route::post('ebook/addFeedBack','EbookController@addFeedBack');
     Route::get('member/detail/{id}','MemberController@getDetail');
     Route::post('member/update','MemberController@updateMember');
     Route::post('member/profile/upload','MemberController@updatePhotoProfile');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Storage;
+use DateTime;
 
 class LoanTransactionController extends Controller
 {
@@ -17,12 +18,36 @@ class LoanTransactionController extends Controller
         $this->feedback = DB::table('feedback');
         $this->member_premium = DB::table('member_premium');
         $this->library = DB::table('library');
+        $this->library_saldo = DB::table('library_saldo_log');
+        $this->member_saldo = DB::table('member_saldo_log');
     }
 
     public function getBookLoan($id)
     {
         $memberID = $id;
+        $overDueDay = 0;
+        $dueDateFee = 0;
 
+        $checkTransaction = DB::table('transaction_loan')->where('memberID', $memberID)->where('transactionLoanStatus', 0)->first();
+        
+        if($checkTransaction != null){
+
+            $libraryID = $checkTransaction->libraryID;
+            $due =  $checkTransaction->transactionLoanDueDate;
+            $dueDate = new DateTime($due);
+            $currentDate = new DateTIME(date('Ymd'));
+            
+            //validate book loan is overdue or no
+            if($currentDate > $dueDate){
+                $dueTotal = $dueDate->diff($currentDate);
+                $overDueDay = $dueTotal->days;
+
+                $checkSetting = DB::table('setting')->select('settingValue')->where('libraryID',$libraryID)->first();
+                $settingValue = json_decode($checkSetting->settingValue);
+                $dueDateFee = $settingValue->dueDateFee;
+            }
+        }
+        
         $query = $this->transaction_loan;
         $query->select('transaction_loan.*', 'library.libraryName', 'library.libraryAddress', 'university.universityName',
                         'member.memberFirstName', 'member.memberLastName', 'member.memberPhone',
@@ -36,11 +61,14 @@ class LoanTransactionController extends Controller
 
         $query = $query->get();
         $total = count($query);
+        $overDueFee = $overDueDay * $dueDateFee * $total;
         $book = json_decode(json_encode($query), true);
 
         $data = array(
             'book' => $book,
-            'bookTotal' => $total
+            'bookTotal' => $total,
+            'overdueDay' => $overDueDay,
+            'overDueFee' => $overDueFee    
         );
 
         return response()->json($data);
@@ -68,6 +96,33 @@ class LoanTransactionController extends Controller
         $data = array(
             'book' => $book,
             'bookTotal' => $total
+        );
+
+        return response()->json($data);
+    }
+
+    public function getBookLoanLibrary($id)
+    {
+        $libraryID = $id;
+        
+        $query = $this->transaction_loan;
+        $query->select('transaction_loan.*', 'library.libraryName', 'library.libraryAddress', 'university.universityName',
+                        'member.memberFirstName', 'member.memberLastName', 'member.memberPhone',
+                        'book.bookTitle', 'book.bookWriter', 'book.bookRelease' );
+        $query->leftjoin('library', 'library.libraryID', '=', 'transaction_loan.libraryID');
+        $query->leftjoin('university', 'university.universityID', '=', 'library.universityID');
+        $query->leftjoin('member', 'member.memberID', '=', 'transaction_loan.memberID');
+        $query->leftjoin('book', 'book.bookID', '=', 'transaction_loan.bookID');
+        $query->where('transaction_loan.libraryID', $libraryID);
+        $query->where('transactionLoanStatus', 0);
+
+        $query = $query->get();
+        $total = count($query);
+        $book = json_decode(json_encode($query), true);
+
+        $data = array(
+            'book' => $book,
+            'bookTotal' => $total 
         );
 
         return response()->json($data);
@@ -125,53 +180,37 @@ class LoanTransactionController extends Controller
         $tempData = [];
         $date = date('Ymd');
 
-        $transaction = $request->input("transaction");
-        $transactionLoanID = $request->input('transactionLoanID');
         $libraryID = $request->input('libraryID');
         $memberID = $request->input('memberID');
         $bookID = $request->input('bookID');
         $dueDate = $request->input('transactionLoanDueDate');
+        
+        $member = $this->member_premium->where('memberID', $memberID)->where('memberApproval', 1)->first();
+        $library = $this->library->where('libraryID', $libraryID)->first();
+        $checkLoanBook = $this->transaction_loan->where('memberID', $memberID)->where('transactionLoanStatus', 0)->first();
+        $checkSetting = DB::table('setting')->select('settingValue')->where('libraryID',$libraryID)->first();
+        $settingValue = json_decode($checkSetting->settingValue);
 
-        $tempData = [];
-        //validation loanBook or return book
-        if ($transaction == 'returnBook') {
-            // return book transaction
-            if (count($bookID) > 0) {
-                foreach ($bookID as $key => $value) {
-                  $this->updateStokBook('returnBook',$value['bookID']);
-                }
-
-                $returnBook = DB::table('transaction_loan')->whereIn('transactionLoanID',$transactionLoanID)->update(["transactionLoanReturnDate" => $date, "transactionLoanStatus" => 1]);
-
-                if($returnBook){
-                    $msg = 'return book is success';
-                }
-                else{
-                    $status = 422;
-                    $msg = 'return book is fail';
-                }
-            }
+        //validation loanbook
+        if($checkLoanBook != null){
+            $status = 422;
+            $msg = 'this member is borrowing the book';
         }
         else{
-            $member = $this->member_premium->where('memberID', $memberID)->first();
-            $library = $this->library->where('libraryID', $libraryID)->first();
-            $checkLoanBook = $this->transaction_loan->where('memberID', $memberID)->where('transactionLoanStatus', 0)->first();
-            $checkSetting = DB::table('setting')->select('settingValue')->where('libraryID',$libraryID)->first();
-            $settingValue = json_decode($checkSetting->settingValue);
-
-            //validation loanbook
-            if($checkLoanBook != null){
+            //validation member premium
+            if ($member == null){
                 $status = 422;
-                $msg = 'this member is borrowing the book';
+                $msg = 'this member is not premium';
             }
             else{
-                //totalDebet = bookTotal * loanFee
-                $totalDebet = count($bookID) * $settingValue->loanFee;
+                //totalKredit = bookTotal * loanFee
+                $totalKredit = count($bookID) * $settingValue->loanFee;
 
                 //validation member saldo
-                if($member->memberPremiumSaldo >= $totalDebet){
+                if($member->memberPremiumSaldo >= $totalKredit){
                     DB::beginTransaction();
 
+                    //validate when insert and update to DB is error or no
                     try {
                         //  input book loan transaction
                         if (count($bookID) > 0) {
@@ -186,54 +225,51 @@ class LoanTransactionController extends Controller
 
                             $save = DB::table('transaction_loan')->insert($tempData);
 
-                            //debet & update saldo member
-                            $memberSaldo = $member->memberPremiumSaldo -  $totalDebet;
-                            $updateMember = $this->member_premium->where('memberID', $memberID)->update(['memberPremiumSaldo' => $memberSaldo]);
+                            //kredit & update saldo member
+                            $memberSaldo = $member->memberPremiumSaldo -  $totalKredit;
+                            $updateMember = $this->member_premium->where('memberID', $memberID)->where('memberApproval', 1)->update(['memberPremiumSaldo' => $memberSaldo]);
 
-                            //kredit & update saldo library
-                            $kreditLibrary = $totalDebet - ( $totalDebet * 0.1 ); //10% fee for MBAKU
-                            $librarySaldo = $library->librarySaldo + $kreditLibrary;
+                            //debit & update saldo library
+                            $debitLibrary = $totalKredit - ( $totalKredit * 0.1 ); //10% fee for MBAKU
+                            $librarySaldo = $library->librarySaldo + $debitLibrary;
                             $updateLibrary = DB::table('library')->where('libraryID', $libraryID)->update(['librarySaldo' => $librarySaldo]);
 
-                            if($updateMember && $updateLibrary){
-                                //insert log payment book loan
-                                $dateTime = date('Ymdhis');
-                                if (count($bookID) > 0) {
-                                    foreach ($bookID as $key => $value) {
-                                        $tempData2[$key]['libraryID'] = $libraryID;
-                                        $tempData2[$key]['memberID'] = $memberID;
-                                        $tempData2[$key]['bookID'] = $value['bookID'];
-                                        $tempData2[$key]['amount'] = $settingValue->loanFee;
-                                        $tempData2[$key]['paymentLoanDateTime'] = $dateTime;
-                                    }
-                                    $payment = DB::table('payment_loan')->insert($tempData2);
+                            //insert log payment book loan
+                            $dateTime = date('Ymdhis');
+                            if (count($bookID) > 0) {
+                                foreach ($bookID as $key => $value) {
+                                    $tempData2[$key]['libraryID'] = $libraryID;
+                                    $tempData2[$key]['memberID'] = $memberID;
+                                    $tempData2[$key]['bookID'] = $value['bookID'];
+                                    $tempData2[$key]['amount'] = $settingValue->loanFee;
+                                    $tempData2[$key]['paymentLoanDateTime'] = $dateTime;
                                 }
-
-                                //insert member_saldo_log
-                                DB::table('member_saldo_log')->insert([
-                                    'memberID' => $memberID,
-                                    'nominal' => $totalDebet,
-                                    'saldoLogType' => 'Debet',
-                                    'paymentType' => 'Mbaku Wallet',
-                                ]);
-
-
-                                //insert library_saldo_log
-                                DB::table('library_saldo_log')->insert([
-                                    'libraryID' => $libraryID,
-                                    'nominal' => $kreditLibrary,
-                                    'saldoLogType' => 'Kredit',
-                                    'paymentType' => 'Mbaku Wallet',
-                                ]);
-
-                                //insert fee to mbaku_saldo_log
-                                $fee = $totalDebet * 0.1;
-                                DB::table('mbaku_saldo_log')->insert([
-                                    'nominal' => $fee,
-                                    'saldoLogType' => 'Kredit Fee',
-                                    'paymentType' => 'Mbaku Wallet',
-                                ]);     
+                                $payment = DB::table('payment_loan')->insert($tempData2);
                             }
+
+                            //insert member_saldo_log
+                            DB::table('member_saldo_log')->insert([
+                                'memberID' => $memberID,
+                                'nominal' => $totalKredit,
+                                'saldoLogType' => 'Kredit',
+                                'paymentType' => 'Mbaku Wallet',
+                            ]);
+
+                            //insert library_saldo_log
+                            DB::table('library_saldo_log')->insert([
+                                'libraryID' => $libraryID,
+                                'nominal' => $debitLibrary,
+                                'saldoLogType' => 'Debit',
+                                'paymentType' => 'Mbaku Wallet',
+                            ]);
+
+                            //insert fee to mbaku_saldo_log
+                            $fee = $totalKredit * 0.1;
+                            DB::table('mbaku_saldo_log')->insert([
+                                'nominal' => $fee,
+                                'saldoLogType' => 'Debit',
+                                'paymentType' => 'Mbaku Wallet',
+                            ]);     
 
                             DB::commit(); // all good
                                 
@@ -241,7 +277,7 @@ class LoanTransactionController extends Controller
                         }
                     }
                     catch (\Exception $e) {
-                        DB::rollback(); //// something went wrong
+                        DB::rollback(); // something went wrong
 
                         $status = 422;
                         $msg = 'loan book is fail';
@@ -251,8 +287,9 @@ class LoanTransactionController extends Controller
                     $status = 422;
                     $msg = 'member saldo is not enough';
                 }
+                
             }
-
+           
         }
 
         $data = array(
@@ -263,7 +300,123 @@ class LoanTransactionController extends Controller
         return response()->json($data);
     }
 
+    public function returnTransaction(Request $request)
+    {
+        $msg = '';
+        $status = 200;
+        $tempData = [];
+        $date = date('Ymd');
+
+        $paymentType = $request->input("paymentType");
+        $transactionLoanID = $request->input('transactionLoanID');
+        $overDueFee = $request->input('overDueFee');
+        $memberID = $request->input('memberID');
+        $bookID = $request->input('bookID');
+
+        DB::beginTransaction();
+
+        //validate when insert and update to DB is error or no
+        try {
+            //validation transaction is overdue or not
+            if($overDueFee > 0){
+                $library = $this->transaction_loan->where('transactionLoanID', $transactionLoanID)->first();
+                $libraryID = $library->libraryID;
+
+                //validation payment type
+                if($paymentType == "e-wallet"){
+                    $getMember = $this->member_premium->where('memberID', $memberID)->where('memberApproval', 1)->first();
+                    $memberSaldo = $getMember->memberPremiumSaldo;
+                    
+                    //validation member saldo
+                    if($memberSaldo >= $overDueFee){
+                        //kredit saldo member
+                        $kredit = $memberSaldo - $overDueFee;
+                        $updateMember = $this->member_premium->where('memberID', $memberID)->where('memberApproval', 1)->update(['memberPremiumSaldo' => $kredit]);
+
+                        //debet saldo library
+                        $librarySaldo = $this->library->where('libraryID', $libraryID)->first();
+                        $debet = $overDueFee + $librarySaldo->librarySaldo;
+                        $updateLibrary = DB::table('library')->where('libraryID', $libraryID)->update(['librarySaldo' => $debet]); 
+
+                        //insert member_saldo_log
+                        DB::table('member_saldo_log')->insert([
+                            'memberID' => $memberID,
+                            'nominal' => $overDueFee,
+                            'saldoLogType' => 'Kredit',
+                            'paymentType' => 'Mbaku Wallet',
+                        ]);
+
+                        //insert library_saldo_log
+                        DB::table('library_saldo_log')->insert([
+                            'libraryID' => $libraryID,
+                            'nominal' => $overDueFee,
+                            'saldoLogType' => 'Debit',
+                            'paymentType' => 'Mbaku Wallet',
+                        ]);
+                                
+                    }
+                    else{
+                        $data = array(
+                            'status' => 422,
+                            'message' => 'member saldo is not enough',
+                        );
+                
+                        return response()->json($data);
+                        exit();
+                    }
+                }
+                //payment Type == cash
+                else{
+
+                    //insert member_saldo_log
+                    DB::table('member_saldo_log')->insert([
+                        'memberID' => $memberID,
+                        'nominal' => $overDueFee,
+                        'saldoLogType' => 'Kredit',
+                        'paymentType' => 'Cash',
+                    ]);
+
+                    //insert library_saldo_log
+                    DB::table('library_saldo_log')->insert([
+                        'libraryID' => $libraryID,
+                        'nominal' => $overDueFee,
+                        'saldoLogType' => 'Debit',
+                        'paymentType' => 'Cash',
+                    ]);
+                }
+            }
+        
+            // return book transaction
+            if (count($bookID) > 0) {
+                foreach ($bookID as $key => $value) {
+                    $this->updateStokBook('returnBook',$value['bookID']);
+                }
+
+                $returnBook = DB::table('transaction_loan')->whereIn('transactionLoanID',$transactionLoanID)->update(["transactionLoanReturnDate" => $date, "transactionLoanStatus" => 1]);
+            }
+
+            DB::commit(); // all good
+
+            $msg = 'return book is success';
+        }
+        catch (\Exception $e) {
+            DB::rollback(); // something went wrong
+
+            $status = 422;
+            $msg = 'return book is fail';
+        }
+
+        $data = array(
+            'status' => $status,
+            'message' => $msg
+        );
+
+        return response()->json($data);
+        
+    }
+
     public function updateStokBook($transaction,$bookID){
+
         $getStok = DB::table('book')->select('bookStock')->where('bookID',$bookID)->first();
         if($transaction == 'returnBook'){
             $stock = $getStok->bookStock + 1;
@@ -274,5 +427,22 @@ class LoanTransactionController extends Controller
 
         $query = DB::table('book')->where('bookID',$bookID)->update(['bookStock' => $stock]);
         return response()->json($query, 200);
+    }
+
+    public function logLibrarySaldo($id){
+
+        $libraryID = $id;
+
+        $query = $this->library_saldo->where('libraryID', $libraryID)->orderBy('createdAt', 'desc')->get();
+        
+        $total = count($query);
+        $libraryLog = json_decode(json_encode($query), true);
+
+        $data = array(
+            'libraryLog' => $libraryLog,
+            'ebookTotal' => $total
+        );
+
+        return response()->json($data);
     }
 }

@@ -31,8 +31,11 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api'] ], function () {
     Route::get('library/detail/{id}','LibraryController@getDetailLibrary');
     Route::post('library/store','LibraryController@store');
     Route::get('bookLoan/user/{id}','LoanTransactionController@getBookLoan');
+    Route::get('bookLoan/library/{id}','LoanTransactionController@getBookLoanLibrary');
+    Route::get('logSaldo/library/{id}','LoanTransactionController@logLibrarySaldo');
     Route::get('loanHistory/user/{id}','LoanTransactionController@getBookLoanHistory');
     Route::post('loanTransaction','LoanTransactionController@loanTransaction');
+    Route::post('returnTransaction','LoanTransactionController@returnTransaction');
     Route::get('ebookRental/user/{id}','LoanTransactionController@getEbookRental');
     Route::get('ebookWishlist/user/{id}','LoanTransactionController@getEbookWishlist');
     Route::get('userBanner/{id}','MemberController@userBanner');

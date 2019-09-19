@@ -244,7 +244,7 @@ class EbookController extends Controller
         $feedBack = 0;
 
         $getRate = DB::table($this->tbl_feedback)
-            ->where('feedbackID', $ebookID)
+            ->where('ebookID', $ebookID)
             ->sum('feedBackValue');
 
         if ($getRate) {

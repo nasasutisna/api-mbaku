@@ -18,8 +18,8 @@ class LoanTransactionController extends Controller
         $this->feedback = DB::table('feedback');
         $this->member_premium = DB::table('member_premium');
         $this->library = DB::table('library');
-        $this->library_saldo = DB::table('library_saldo_log');
-        $this->member_saldo = DB::table('member_saldo_log');
+        $this->library_saldo_log = DB::table('library_saldo_log');
+        $this->member_saldo_log = DB::table('member_saldo_log');
     }
 
     public function getBookLoan($id)
@@ -74,9 +74,13 @@ class LoanTransactionController extends Controller
         return response()->json($data);
     }
 
-    public function getBookLoanHistory($id)
+    public function getBookLoanHistory(Request $request)
     {
-        $memberID = $id;
+        $memberID = $request->input('memberID');
+        $page = $request->input('page') ? $request->input('page') : 1;
+        $limit = $request->input('limit') ? $request->input('limit') : 10;
+
+        $skip = ($page == 1) ? $page - 1 : (($page - 1) * $limit);
 
         $query = $this->transaction_loan;
         $query->select('transaction_loan.*', 'library.libraryName', 'library.libraryAddress', 'university.universityName',
@@ -88,22 +92,73 @@ class LoanTransactionController extends Controller
         $query->leftjoin('book', 'book.bookID', '=', 'transaction_loan.bookID');
         $query->where('transaction_loan.memberID', $memberID);
         $query->where('transactionLoanStatus', 1);
+        
+        $total = $query->count();
+        $totalPage = ceil($total / $limit);
+
+        $query->skip($skip);
+        $query->limit($limit);
 
         $query = $query->get();
-        $total = count($query);
-        $book = json_decode(json_encode($query), true);
 
         $data = array(
-            'book' => $book,
-            'bookTotal' => $total
+            'book' => $query,
+            'limit' => (int) $limit,
+            'page' => (int) $page,
+            'booktotal' => $total,
+            'totalPage' => $totalPage,
         );
 
         return response()->json($data);
     }
 
-    public function getBookLoanLibrary($id)
+    public function getBookLoanOverdue(Request $request)
     {
-        $libraryID = $id;
+        $libraryID = $request->input('libraryID');
+        $page = $request->input('page') ? $request->input('page') : 1;
+        $limit = $request->input('limit') ? $request->input('limit') : 10;
+        $currentDate = date('Ymd');
+
+        $skip = ($page == 1) ? $page - 1 : (($page - 1) * $limit);
+
+        $query = $this->transaction_loan;
+        $query->select('transaction_loan.*', 'library.libraryName', 'library.libraryAddress', 'university.universityName',
+                        'member.memberFirstName', 'member.memberLastName', 'member.memberPhone',
+                        'book.bookTitle', 'book.bookWriter', 'book.bookRelease' );
+        $query->leftjoin('library', 'library.libraryID', '=', 'transaction_loan.libraryID');
+        $query->leftjoin('university', 'university.universityID', '=', 'library.universityID');
+        $query->leftjoin('member', 'member.memberID', '=', 'transaction_loan.memberID');
+        $query->leftjoin('book', 'book.bookID', '=', 'transaction_loan.bookID');
+        $query->where('transaction_loan.libraryID', $libraryID);
+        $query->where('transactionLoanStatus', 0);
+        $query->where('transactionLoanDueDate', '<', $currentDate);
+        
+        $total = $query->count();
+        $totalPage = ceil($total / $limit);
+
+        $query->skip($skip);
+        $query->limit($limit);
+
+        $query = $query->get();
+
+        $data = array(
+            'book' => $query,
+            'limit' => (int) $limit,
+            'page' => (int) $page,
+            'booktotal' => $total,
+            'totalPage' => $totalPage,
+        );
+
+        return response()->json($data);
+    }
+
+    public function getBookLoanLibrary(Request $request)
+    {
+        $libraryID = $request->input('libraryID');
+        $page = $request->input('page') ? $request->input('page') : 1;
+        $limit = $request->input('limit') ? $request->input('limit') : 10;
+
+        $skip = ($page == 1) ? $page - 1 : (($page - 1) * $limit);
         
         $query = $this->transaction_loan;
         $query->select('transaction_loan.*', 'library.libraryName', 'library.libraryAddress', 'university.universityName',
@@ -116,13 +171,58 @@ class LoanTransactionController extends Controller
         $query->where('transaction_loan.libraryID', $libraryID);
         $query->where('transactionLoanStatus', 0);
 
+        $total = $query->count();
+        $totalPage = ceil($total / $limit);
+
+        $query->skip($skip);
+        $query->limit($limit);
+
         $query = $query->get();
-        $total = count($query);
-        $book = json_decode(json_encode($query), true);
 
         $data = array(
-            'book' => $book,
-            'bookTotal' => $total 
+            'book' => $query,
+            'limit' => (int) $limit,
+            'page' => (int) $page,
+            'booktotal' => $total,
+            'totalPage' => $totalPage,
+        );
+
+        return response()->json($data);
+    }
+
+    public function getLoanHistoryLibrary(Request $request)
+    {
+        $libraryID = $request->input('libraryID');
+        $page = $request->input('page') ? $request->input('page') : 1;
+        $limit = $request->input('limit') ? $request->input('limit') : 10;
+
+        $skip = ($page == 1) ? $page - 1 : (($page - 1) * $limit);
+        
+        $query = $this->transaction_loan;
+        $query->select('transaction_loan.*', 'library.libraryName', 'library.libraryAddress', 'university.universityName',
+                        'member.memberFirstName', 'member.memberLastName', 'member.memberPhone',
+                        'book.bookTitle', 'book.bookWriter', 'book.bookRelease' );
+        $query->leftjoin('library', 'library.libraryID', '=', 'transaction_loan.libraryID');
+        $query->leftjoin('university', 'university.universityID', '=', 'library.universityID');
+        $query->leftjoin('member', 'member.memberID', '=', 'transaction_loan.memberID');
+        $query->leftjoin('book', 'book.bookID', '=', 'transaction_loan.bookID');
+        $query->where('transaction_loan.libraryID', $libraryID);
+        $query->where('transactionLoanStatus', 1);
+
+        $total = $query->count();
+        $totalPage = ceil($total / $limit);
+
+        $query->skip($skip);
+        $query->limit($limit);
+
+        $query = $query->get();
+
+        $data = array(
+            'book' => $query,
+            'limit' => (int) $limit,
+            'page' => (int) $page,
+            'booktotal' => $total,
+            'totalPage' => $totalPage,
         );
 
         return response()->json($data);
@@ -415,9 +515,10 @@ class LoanTransactionController extends Controller
         
     }
 
-    public function updateStokBook($transaction,$bookID){
-
+    public function updateStokBook($transaction,$bookID)
+    {
         $getStok = DB::table('book')->select('bookStock')->where('bookID',$bookID)->first();
+
         if($transaction == 'returnBook'){
             $stock = $getStok->bookStock + 1;
         }
@@ -429,18 +530,39 @@ class LoanTransactionController extends Controller
         return response()->json($query, 200);
     }
 
-    public function logLibrarySaldo($id){
+    public function logSaldo(Request $request)
+    {
+        $id = $request->input('id');
+        $role = $request->input('role');
+        $page = $request->input('page') ? $request->input('page') : 1;
+        $limit = $request->input('limit') ? $request->input('limit') : 10;
 
-        $libraryID = $id;
+        $skip = ($page == 1) ? $page - 1 : (($page - 1) * $limit);
 
-        $query = $this->library_saldo->where('libraryID', $libraryID)->orderBy('createdAt', 'desc')->get();
-        
-        $total = count($query);
-        $libraryLog = json_decode(json_encode($query), true);
+        if($role == 'member'){
+            $query = $this->member_saldo_log;
+            $query->where('memberID', $id);
+        }
+        else{
+            $query = $this->library_saldo_log;
+            $query->where('libraryID', $id);
+        }
+
+        $total = $query->count();
+        $totalPage = ceil($total / $limit);
+
+        $query->skip($skip);
+        $query->limit($limit);
+        $query->orderBy('createdAt', 'desc');
+
+        $query = $query->get();
 
         $data = array(
-            'libraryLog' => $libraryLog,
-            'ebookTotal' => $total
+            'data' => $query,
+            'limit' => (int) $limit,
+            'page' => (int) $page,
+            'total' => $total,
+            'totalPage' => $totalPage,
         );
 
         return response()->json($data);

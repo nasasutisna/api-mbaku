@@ -358,4 +358,30 @@ class EbookController extends Controller
 
         return response()->json($data);
     }
+
+    public function deleteEbook($id)
+    {
+        $ebookID = $id;
+        $msg = '';
+        $status = 200;
+
+        $chckLibrary = $this->ebook->where('ebookID',$ebookID)->first();
+
+        if($chckLibrary != null){
+            $delete = DB::table('ebook')->where('ebookID',$ebookID)->delete();
+
+            $msg = 'delete has successed';
+        }
+        else{
+            $status = 422;
+            $msg = 'delete has failed';
+        }
+        
+        $data = array(
+            'status' => $status,
+            'message' => $msg
+        );
+
+        return response()->json($data);
+    }
 }

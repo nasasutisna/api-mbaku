@@ -231,4 +231,30 @@ class LibraryController extends Controller
 
         return $data;
     }
+
+    public function deleteLibrary($id)
+    {
+        $libraryID = $id;
+        $msg = '';
+        $status = 200;
+
+        $chckLibrary = DB::table('library')->where('libraryID',$libraryID)->first();
+
+        if($chckLibrary != null){
+            $delete = DB::table('library')->where('libraryID',$libraryID)->delete();
+
+            $msg = 'delete has successed';
+        }
+        else{
+            $status = 422;
+            $msg = 'delete has failed';
+        }
+        
+        $data = array(
+            'status' => $status,
+            'message' => $msg
+        );
+
+        return response()->json($data);
+    }
 }

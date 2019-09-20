@@ -353,7 +353,7 @@ class MemberController extends Controller
                 }
 
                 Mail::send('approval', $data, function($message) use ($memberID, $image1, $image2 ){
-                    $message->from('donotreply@mbaku.co.id', 'Admin MBAKU');
+                    $message->from('donotreply@mbaku.online', 'Admin MBAKU');
                     $message->to('mbakuteam@gmail.com', 'Admin MBAKU')->subject('[MBAKU] Approval Upgrade Member Premium');
                     $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$image1));
                     $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$image2));

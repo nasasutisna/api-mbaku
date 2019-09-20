@@ -24,6 +24,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api'] ], function () {
     Route::get('book/searchTitle','BookController@searchTitle');
     Route::get('ebook/searchTitle','EbookController@searchTitle');
     Route::post('ebook/store','EbookController@store');
+    Route::get('ebook/delete/{id}','EbookController@deleteEbook');
     Route::post('book/store','BookController@store');
     Route::get('book/detail/{id}','BookController@getDetailBook');
     Route::get('ebook/detail/{id}','EbookController@getDetailEbook');
@@ -31,9 +32,11 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api'] ], function () {
     Route::get('library/detail/{id}','LibraryController@getDetailLibrary');
     Route::post('library/store','LibraryController@store');
     Route::get('bookLoan/user/{id}','LoanTransactionController@getBookLoan');
-    Route::get('bookLoan/library/{id}','LoanTransactionController@getBookLoanLibrary');
-    Route::get('logSaldo/library/{id}','LoanTransactionController@logLibrarySaldo');
-    Route::get('loanHistory/user/{id}','LoanTransactionController@getBookLoanHistory');
+    Route::post('bookLoan/library','LoanTransactionController@getBookLoanLibrary');
+    Route::post('loanHistory/library','LoanTransactionController@getLoanHistoryLibrary');
+    Route::post('logSaldo','LoanTransactionController@logSaldo');
+    Route::post('loanHistory/user','LoanTransactionController@getBookLoanHistory');
+    Route::post('loanOverdue','LoanTransactionController@getBookLoanOverdue');
     Route::post('loanTransaction','LoanTransactionController@loanTransaction');
     Route::post('returnTransaction','LoanTransactionController@returnTransaction');
     Route::get('ebookRental/user/{id}','LoanTransactionController@getEbookRental');
@@ -42,6 +45,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api'] ], function () {
     Route::get('book/getNewBook','BookController@getNewBook');
     Route::post('library/getNearby','LibraryController@getNearby');
     Route::post('library/getListLibrary','LibraryController@getListLibrary');
+    Route::get('library/delete/{id}','LibraryController@deleteLibrary');
     Route::get('book/getMostSearch','BookController@getMostSearch');
     Route::post('category/getCategory','CategoryController@getCategory');
     Route::get('logout', 'LoginController@logout');

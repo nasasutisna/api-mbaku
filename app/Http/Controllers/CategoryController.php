@@ -45,18 +45,4 @@ class CategoryController extends Controller
 
         return response()->json($data);
     }
-
-    public function getDetailBook($id)
-    {
-        $bookID = $id;
-
-        $query = $this->book->select('category.categoryTitle', 'book.*')
-            ->leftjoin('category', 'category.categoryID', '=', 'book.categoryID')
-            ->where('bookID', $bookID);
-
-        $query = $query->first();
-        $data = json_decode(json_encode($query), true);
-
-        return response()->json($data);
-    }
 }

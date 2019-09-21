@@ -244,7 +244,7 @@ class EbookController extends Controller
         $feedBack = 0;
 
         $getRate = DB::table($this->tbl_feedback)
-            ->where('feedbackID', $ebookID)
+            ->where('ebookID', $ebookID)
             ->sum('feedBackValue');
 
         if ($getRate) {
@@ -354,6 +354,32 @@ class EbookController extends Controller
 
         $data = array(
             'feed' => $feed,
+        );
+
+        return response()->json($data);
+    }
+
+    public function deleteEbook($id)
+    {
+        $ebookID = $id;
+        $msg = '';
+        $status = 200;
+
+        $chckLibrary = $this->ebook->where('ebookID',$ebookID)->first();
+
+        if($chckLibrary != null){
+            $delete = DB::table('ebook')->where('ebookID',$ebookID)->delete();
+
+            $msg = 'delete has successed';
+        }
+        else{
+            $status = 422;
+            $msg = 'delete has failed';
+        }
+        
+        $data = array(
+            'status' => $status,
+            'message' => $msg
         );
 
         return response()->json($data);

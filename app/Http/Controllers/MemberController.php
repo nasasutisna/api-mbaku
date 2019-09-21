@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Midtrans;
+use Illuminate\Support\Facades\Mail;
 
 class MemberController extends Controller
 {
@@ -282,7 +283,7 @@ class MemberController extends Controller
         $memberPhotoKTP = $request->file('file');
 
         $date = date('Ymdhis');
-        $fileName = str_replace(' ', '_', $date . '_' . $memberPhotoKTP->getClientOriginalName()) . '.jpg';
+        $fileName = str_replace(' ', '_', $date . '_' . $memberPhotoKTP->getClientOriginalName());
         $memberPhotoKTP->storeAs('public/memberPremium/' . $memberID, $fileName);
 
         $data = array(
@@ -307,61 +308,67 @@ class MemberController extends Controller
         $emergencyName = $request->input('emergencyName');
         $emergencyNumber = $request->input('emergencyNumber');
         $emergencyRole = $request->input('emergencyRole');
-
-        // if ($memberPhotoKTP1 && $memberPhotoKTP2) {
-        //     $photoKTP1 = str_replace(' ', '_', $date . '_' . $memberPhotoKTP1->getClientOriginalName());
-        //     $memberPhotoKTP1->storeAs('public/memberPremium/' . $memberID, $photoKTP1);
-
-        //     $photoKTP2 = str_replace(' ', '_', $date . '_' . $memberPhotoKTP2->getClientOriginalName());
-        //     $memberPhotoKTP2->storeAs('public/memberPremium/' . $memberID, $photoKTP2);
-        // }
+        $image1 = $request->input('image1');
+        $image2 = $request->input('image2');
 
         $content = array(
             'memberID' => $memberID,
-            'memberPhotoKTP1' => $memberPhotoKTP1,
-            'memberPhotoKTP2' => $memberPhotoKTP2,
+            'memberPhotoKTP1' => $image1,
+            'memberPhotoKTP2' => $image2,
             'emergencyName' => $emergencyName,
             'emergencyNumber' => $emergencyNumber,
             'emergencyRole' => $emergencyRole,
             'memberPremiumSaldo' => 0,
-            'memberApproval' => 1,
+            'memberApproval' => 0,
         );
 
-        $query = $this->member_premium->insert($content);
+        DB::beginTransaction();
 
-        if ($query) {
-            $member = DB::table('member');
-            $member->select('member_premium.*', 'member.*');
-            $member->leftjoin('member_premium', 'member_premium.memberID', '=', 'member.memberID');
-            $member->where("member.memberID", $memberID);
-            $member = $member->get();
+        try {
+            $query = $this->member_premium->insert($content);
 
-            foreach ($member as $d) {
-                $data = [
-                    'memberPremiumID' => $d->memberPremiumID,
-                    'emergencyName' => $d->emergencyName,
-                    'emergencyNumber' => $d->emergencyNumber,
-                    'emergencyRole' => $d->emergencyRole,
-                    'memberID' => $d->memberID,
-                    'memberFirstName' => $d->memberFirstName,
-                    'memberLastName' => $d->memberLastName,
-                    'memberGender' => $d->memberGender,
-                    'memberPhone' => $d->memberPhone,
-                    'memberEmail' => $d->memberEmail,
-                    'memberAddress' => $d->memberAddress,
-                ];
+            if ($query) {
+                $member = DB::table('member');
+                $member->select('member_premium.*', 'member.*');
+                $member->leftjoin('member_premium', 'member_premium.memberID', '=', 'member.memberID');
+                $member->where("member.memberID", $memberID);
+                $member = $member->get();
 
+                foreach ($member as $d) {
+                    $data = [
+                        'memberPremiumID' => $d->memberPremiumID,
+                        'emergencyName' => $d->emergencyName,
+                        'emergencyNumber' => $d->emergencyNumber,
+                        'emergencyRole' => $d->emergencyRole,
+                        'memberID' => $d->memberID,
+                        'memberFirstName' => $d->memberFirstName,
+                        'memberLastName' => $d->memberLastName,
+                        'memberGender' => $d->memberGender,
+                        'memberPhone' => $d->memberPhone,
+                        'memberEmail' => $d->memberEmail,
+                        'memberAddress' => $d->memberAddress,
+                        'image1' => $image1
+                    ];
+
+                }
+
+                Mail::send('approval', $data, function($message) use ($memberID, $image1, $image2 ){
+                    $message->from('donotreply@mbaku.online', 'Admin MBAKU');
+                    $message->to('mbakuteam@gmail.com', 'Admin MBAKU')->subject('[MBAKU] Approval Upgrade Member Premium');
+                    $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$image1));
+                    $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$image2));
+
+                });
+
+                
             }
-
-            // Mail::send('approval', $data, function($message) use ($memberID, $photoKTP1, $photoKTP2 ){
-            //     $message->to('mbakuteam@gmail.com', 'Admin MBAKU')->subject('[MBAKU] Approval Upgrade Member Premium');
-            //     $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$photoKTP1));
-            //     $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$photoKTP2));
-
-            // });
+            DB::commit(); // all good
 
             $msg = 'Request has been sent';
-        } else {
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+
             $msg = 'Request failed to sent';
             $status = 500;
         }
@@ -380,13 +387,16 @@ class MemberController extends Controller
             'memberApproval' => 1,
         ]);
 
+
         if ($query) {
             $member = $this->member_premium->where('memberPremiumID', $memberPremiumID)->select('memberID')->first();
             $memberID = $member->memberID;
 
-            $updateMember = $this->member->where('memberID', $memberID)->update([
+            $updateMember = DB::table($this->tbl_member)->where('memberID', $memberID)->update([
                 'memberRole' => 1,
             ]);
+
+            // print_r($updateMember); exit();
 
             if ($updateMember) {
                 $status = 200;
@@ -409,13 +419,14 @@ class MemberController extends Controller
             'memberApproval' => 2,
         ]);
 
+
         if ($query) {
             $status = 200;
             $msg = 'Request has rejected';
-
+           
         } else {
             $status = 500;
-            $msg = 'reject is error';
+            $msg = 'approval is error';
         }
 
         return view('EmailVerified', ['status' => $status, 'msg' => $msg]);
@@ -564,5 +575,13 @@ class MemberController extends Controller
         $id = $request->input('id');
         $result = Midtrans::status($id);
         return response()->json($result, 200);
+    }
+
+    public function downloadImage($filename,$memberID)
+    {
+        $path = 'profile/'.$memberID.'/'.$filename;
+        $file = Storage::disk('public')->path($path);
+
+        return response()->download($file);
     }
 }

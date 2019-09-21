@@ -100,7 +100,7 @@ class BookController extends Controller
 
         // searching
         if ($keyword != '' && $keyword != 'undefined') {
-            $query = $query->where('book.bookTitle', $keyword);
+            $query = $query->where('book.bookTitle','like','%'.$keyword.'%');
         }
 
         $total = $query->count();

@@ -117,30 +117,42 @@ class MemberController extends Controller
         return response()->json($results);
     }
 
-    public function updatePhotoProfile(Request $request)
+    public function updateProfile(Request $request)
     {
         $filename = '';
+        $status = 200;
+        $content = array();
+
         $memberID = $request->input('memberID');
+        $firstName = $request->input('firstName');
+        $lastName = $request->input('lastName');
+        $phone = $request->input('phone');
 
-        $photo = $request->file("photo");
+        $content['memberFirstName'] = $firstName;
+        $content['memberLastName'] = $lastName;
+        $content['memberPhone'] = $phone;
+
+        $photo = $request->file("file");
         if ($photo) {
-            $filename = str_replace(' ', '_', date('Ymdhis') . '_' . $photo->getClientOriginalName());
-            $storePhoto = $photo->storeAs('public/profile/' . $memberID . '/', $filename);
+            $filename = $photo->getClientOriginalName();
+            $photo->storeAs('public/profile/' . $memberID . '/', $filename);
+            $content['memberPhoto'] = $filename;
         }
 
-        $member = DB::table($this->tbl_member)->where('memberID', $memberID)->update(['memberPhoto' => $filename]);
+        $member = DB::table($this->tbl_member)->where('memberID', $memberID)->update($content);
 
-        if ($member) {
-            $msg = 'berhasil upload';
-        } else {
-            $msg = 'gagal upload';
-        }
+            if ($member) {
+                $msg = 'berhasil upload';
+            } else {
+                $msg = 'gagal upload';
+                $status = 422;
+            }
 
         $data = array(
             'msg' => $msg,
         );
 
-        return response()->json($data);
+        return response()->json($data,$status);
     }
     public function registerAccount(Request $request)
     {

@@ -17,6 +17,7 @@ class LoginController extends Controller
     {
         $this->users = DB::table('users');
         $this->member = DB::table('member');
+        $this->staff = DB::table('staff');
     }
 
     public function processLogin(Request $request){
@@ -39,7 +40,13 @@ class LoginController extends Controller
             $verify = password_verify($password, $pass);
 
             if($verify){
-                $member = $this->member->where('memberEmail','=',$checkUser->email)->first();
+                if($checkUser->role == 0){
+                    $user = $this->member->where('memberEmail','=',$checkUser->email)->first();
+                }
+                else{
+                    $user = $this->staff->where('staffEmail','=',$checkUser->email)->first();
+                }
+
                 $msg = 'success';
 
                 $userLogin = array(
@@ -47,9 +54,9 @@ class LoginController extends Controller
                     'userStatus' => $checkUser->role
                 );
 
-                if($member){
+                if($user){
                     $userLogin = array(
-                        'userInfo' => $member,
+                        'userInfo' => $user,
                         'userStatus' => $checkUser->role
                     );
                 }
@@ -72,7 +79,7 @@ class LoginController extends Controller
                     );
                 }
                 //end generate token
-                
+
             }
             else{
                 $isLogin = false;
@@ -86,7 +93,7 @@ class LoginController extends Controller
             $msg = 'Email tidak terdaftar';
         }
 
-        
+
 
         $data = array(
             'msg' => $msg,
@@ -97,7 +104,7 @@ class LoginController extends Controller
             ),
         );
 
-        
+
         return response()->json($data,$status);
     }
 

@@ -43,6 +43,17 @@ class EmailSenderJob extends Command
 
     public function handle()
     {
+        while (true) {
+            $this->doSchedule();
+
+            // biar ngeloop setiap satu detik
+            sleep(1);
+        }
+    }
+
+    private function doSchedule()
+    {
+
         print("start scheduler kirim email. \r\n");
         $bookingId = Carbon::now()->timestamp;
         $emailSenderFcd = new EmailSenderFacade($bookingId);
@@ -61,6 +72,7 @@ class EmailSenderJob extends Command
                 $emailObject->emailSentDt = Carbon::now()->toDateTimeString();
                 try {
                     $imgHeaderBase64 = base64_encode(file_get_contents(public_path('image/mbaku_header.png')));
+
                     $emailContent = str_replace('{{imgBase64}}', $imgHeaderBase64, $emailObject->emailContent);
                     print("ID : " . $emailObject->emailId . " sent email to " . $emailObject->emailDest . " on " . $emailObject->emailSentDt . " in progress..." . "\r\n");
                     Mail::send([], [], function ($message) use ($emailObject, $emailContent, $imgHeaderBase64) {

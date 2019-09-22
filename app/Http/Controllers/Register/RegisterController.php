@@ -6,7 +6,6 @@ use App\Http\Constants\ResponseConstants;
 use App\Http\Controllers\Controller;
 use App\Http\Utils\ResponseException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class RegisterController extends Controller
@@ -51,7 +50,6 @@ class RegisterController extends Controller
             $data["stactrace"] = $th->getTraceAsString();
         }
 
-        print_r($data);
         return view('EmailVerified', $data);
     }
 }

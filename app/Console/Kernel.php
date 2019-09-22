@@ -29,7 +29,7 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('email:sender')
             ->everyMinute()
-            ->appendOutputTo(storage_path('logs\cron.email.sender.log'));
+            ->appendOutputTo(storage_path('logs/cron_email_sender.log'));
     }
 
     /**

@@ -8,10 +8,9 @@ use Midtrans;
 
 class PaymentController extends Controller
 {
-    public function addTransaction(Request $request)
-    {
-
-    }
+    var $tbl_payment_ebook = 'payment_ebook';
+    var $tbl_payment_loan = 'payment_loan';
+    var $tbl_ebook_rentals = 'ebook_rentals';
 
     public function purchase(Request $request)
     {
@@ -19,12 +18,12 @@ class PaymentController extends Controller
         $email = $request->input('email');
         $phone = $request->input('phone');
         $ebookID = $request->input('ebookID');
-        $judul = $request->input('judul');
-        $price = $request->input('price');
+        $ebookTitle = $request->input('ebookTitle');
+        $ebookPrice = $request->input('ebookPrice');
 
         $transaction_details = [
             'order_id' => 'MBAKU-' . time(),
-            'gross_amount' => $price,
+            'gross_amount' => $ebookPrice,
         ];
 
         $customer_details = [
@@ -40,10 +39,10 @@ class PaymentController extends Controller
         ];
 
         $item_details = [
-            'id' => $ebookID,
+            'id' => date('Ymdhis'),
             'quantity' => 1,
-            'name' => $judul,
-            'price' => $price,
+            'name' => $ebookTitle,
+            'price' => $ebookPrice,
         ];
 
         $transaction_data = [
@@ -117,7 +116,7 @@ class PaymentController extends Controller
         return response()->json($data, $status);
     }
 
-    public function saveOrder(Request $request)
+    public function savePaymentEbook(Request $request)
     {
         $content = array();
         $data = array();
@@ -125,20 +124,42 @@ class PaymentController extends Controller
 
         $memberID = $request->input('memberID');
         $ebookID = $request->input('ebookID');
-        $transaction_status = $request->input('transaction_status');
+        $libraryID = $request->input('libraryID');
 
+        $content['libraryID'] = $libraryID;
         $content['memberID'] = $memberID;
         $content['ebookID'] = $ebookID;
-        // $content['transaction_id'] = $request->input('transaction_id');
         $content['orderID'] = $request->input('order_id');
         $content['paymentType'] = $request->input('payment_type');
-        $content['grossAmount'] = $request->input('gross_amount');
-        $content['paymentToken'] = $request->input('token');
-        $content['paymentStatus'] = $transaction_status;
+        $content['amount'] = $request->input('gross_amount');
+        $content['paymentToken'] = $request->input('payment_token');
+        $content['paymentStatus'] = $request->input('transaction_status');
         $content['paymentDateTime'] = $request->input('transaction_time');
 
-        $save = DB::table('payment')->insert($content);
-        $data['message'] = 'success';
+        $save = DB::table($this->tbl_payment_ebook)->insert($content);
+
+        if($save){
+            $dateNow = date('Y-m-d');
+            $expireDate = date('Y-m-d', strtotime($dateNow. ' + 14 days'));
+
+            $content2['ebookID'] = $ebookID;
+            $content2['memberID'] = $memberID;
+            $content2['expireDate'] = $expireDate;
+
+            $saveEbook = DB::table($this->tbl_ebook_rentals)->insert($content2);
+
+            if($saveEbook){
+                $data['message'] = 'success';
+            }
+            else{
+                $status = 422;
+                $data['message'] = 'failed';
+            }
+        }
+        else{
+            $status = 422;
+            $data['message'] = 'failed';
+        }
 
         return response()->json($data, $status);
     }

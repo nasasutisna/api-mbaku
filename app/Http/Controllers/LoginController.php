@@ -5,12 +5,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use GuzzleHttp\Client;
+use App\User;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+
+
 class LoginController extends Controller
 {
     public function __construct()
     {
         $this->users = DB::table('users');
         $this->member = DB::table('member');
+        $this->staff = DB::table('staff');
     }
 
     public function processLogin(Request $request){
@@ -21,6 +28,7 @@ class LoginController extends Controller
         $status = 200;
         $token   = '';
         $userLogin = [];
+        $getToken = [];
 
         $email = $request->input('email');
         $password = $request->input('password');
@@ -32,7 +40,13 @@ class LoginController extends Controller
             $verify = password_verify($password, $pass);
 
             if($verify){
-                $member = $this->member->where('memberEmail','=',$checkUser->email)->first();
+                if($checkUser->role == 0){
+                    $user = $this->member->where('memberEmail','=',$checkUser->email)->first();
+                }
+                else{
+                    $user = $this->staff->where('staffEmail','=',$checkUser->email)->first();
+                }
+
                 $msg = 'success';
 
                 $userLogin = array(
@@ -40,15 +54,32 @@ class LoginController extends Controller
                     'userStatus' => $checkUser->role
                 );
 
-                if($member){
+                if($user){
                     $userLogin = array(
-                        'userInfo' => $member,
+                        'userInfo' => $user,
                         'userStatus' => $checkUser->role
                     );
                 }
 
                 $isLogin = $verify;
-                $token = $this->generateToken();
+
+                //start generate token
+                $credentials = request(['email', 'password']);
+                if(Auth::attempt($credentials)){
+                    $user = $request->user();
+                    $tokenResult = $user->createToken('Personal Access Token');
+                    $token = $tokenResult->token;
+
+                    $getToken = array(
+                        'access_token' => $tokenResult->accessToken,
+                        'token_type' => 'Bearer',
+                        'expires_at' => Carbon::parse(
+                            $tokenResult->token->expires_at
+                        )->toDateTimeString()
+                    );
+                }
+                //end generate token
+
             }
             else{
                 $isLogin = false;
@@ -62,14 +93,17 @@ class LoginController extends Controller
             $msg = 'Email tidak terdaftar';
         }
 
+
+
         $data = array(
             'msg' => $msg,
             'user' => $userLogin,
+            'token' => $getToken,
             'isLogin' => array(
                 'status' => $isLogin,
-                'token' => $token
             ),
         );
+
 
         return response()->json($data,$status);
     }
@@ -77,6 +111,30 @@ class LoginController extends Controller
     public function generateToken(){
         $token = 'MBAKU-'.hash('sha256', Str::random(32));
         return $token;
+    }
+
+    public function invalidToken(Request $request){
+
+        $data = [];
+        $isToken = false;
+        $status = 401;
+        $msg = 'Unauthorization';
+
+        $data = array(
+            'status' => $status,
+            'msg' => $msg,
+            'isToken' => $isToken
+        );
+
+        return response()->json($data);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->token()->revoke();
+        return response()->json([
+            'message' => 'Successfully logged out'
+        ]);
     }
 
 }

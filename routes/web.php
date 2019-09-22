@@ -12,5 +12,14 @@
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('home');
 });
+
+Route::get('/verified', function () {
+    return view('EmailVerified');
+})->name('emailverified');
+
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');

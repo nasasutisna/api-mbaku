@@ -1,0 +1,71 @@
+.my-img{
+    border-radius: 10px;
+    width: 10%;
+    margin: 25px 0px 25px;
+}
+
+.banner{
+    background-color: #e0574d;
+}
+
+h1{
+    color: #e0574d;
+    margin-top: 50px;
+    margin-bottom: 10px;
+}
+
+p{
+    font-size: 12pt;
+    line-height: 20pt;
+}
+
+.footer{
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #e0574d;
+    color: white;
+    text-align: center;
+}
+
+.footer p{
+    margin-top: 17px;
+}
+
+.container{
+    margin-top: 130px;
+}
+  
+@media (max-width: 576px) {
+
+    .my-img{
+        border-radius: 10px;
+        width: 30%;
+        margin: 25px 0px 25px;
+    }
+    .container{
+        margin-top: 10px;
+    }
+}
+
+@media only screen 
+and (min-device-width : 768px) 
+and (max-device-width : 1024px)  { 
+    .my-img{
+        border-radius: 10px;
+        width: 30%;
+        margin: 25px 0px 25px;
+    }
+    .container h1{
+        font-size: 50px;
+    }
+
+    .container p{
+        font-size: 30px;
+        line-height: 40px;
+    }
+    .footer p{
+        font-size: 20px;
+    }
+}

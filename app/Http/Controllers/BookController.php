@@ -100,7 +100,7 @@ class BookController extends Controller
 
         // searching
         if ($keyword != '' && $keyword != 'undefined') {
-            $query = $query->where('book.bookTitle', $keyword);
+            $query = $query->where('book.bookTitle','like','%'.$keyword.'%');
         }
 
         $total = $query->count();
@@ -135,50 +135,6 @@ class BookController extends Controller
         $data = json_decode(json_encode($query), true);
 
         return response()->json($data);
-    }
-
-    public function getBookByCategory(Request $request, $id)
-    {
-        $categoryID = $id;
-
-        $query = $this->book;
-        $query->where('categoryID', $categoryID);
-        $query->limit(40);
-        $query = $query->get();
-
-        $arrPage = [];
-        $arrTemp = [];
-        $no = 0;
-        $key = 0;
-
-        if ($query) {
-            foreach ($query as $value) {
-                if (count($arrTemp) > 0) {
-                    if (count($arrTemp[$key]) < 5) {
-                        $arrPage[$key][] = $value;
-                        $arrTemp[$key][] = $value;
-                    } else {
-                        $arrTemp = [];
-                        $key++;
-                    }
-                }
-
-                if (count($arrTemp) == 0) {
-                    $arrPage[$key][] = $value;
-                    $arrTemp[$key][] = $value;
-                }
-            }
-        }
-
-        return response()->json($arrPage);
-    }
-
-    public function getEbook(Request $request)
-    {
-        $filename = $request->input('filename');
-        $file = Storage::disk('public')->path('ebook/' . $filename);
-
-        return response()->download($file);
     }
 
     public function getPopularBook()

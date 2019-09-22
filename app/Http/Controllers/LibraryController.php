@@ -292,7 +292,6 @@ class LibraryController extends Controller
                 $bookTD = $book->whereBetween('createdAt', [$currentDate1, $currentDate2])->sum('bookTotal');
                 $loanTD = DB::table('transaction_loan')->where('libraryID',$libraryID)->where('transactionLoanStatus', 0)->where('transactionLoanDate', $currentDate1)->count();
 
-
                 //ThisWeek
                 $saldoTW = DB::table('library_saldo_log')->where('libraryID',$libraryID)->where('paymentType', 'Mbaku Wallet')->whereBetween('createdAt', [$thisWeek, $currentDate2])->sum('nominal');
                 $bookTW = DB::table('book')->where('libraryID',$libraryID)->whereBetween('createdAt', [$thisWeek, $currentDate2])->sum('bookTotal');

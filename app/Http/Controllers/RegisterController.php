@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 use App\User;
 use Auth;
 use Validator;
-use Illuminate\Foundation\Auth\VerifiesEmails;
+//use Illuminate\Foundation\Auth\VerifiesEmails;
 use Illuminate\Auth\Events\Verified;
 
 class RegisterController extends Controller
@@ -27,7 +27,7 @@ class RegisterController extends Controller
         $status = 200;
         $uuid = Str::uuid();
         $checkExistMember = $this->users->where("email", $request->email)->first();
-        $memberID = mt_rand(100,1000000000).time();
+        $memberID = mt_rand(100, 1000000000) . time();
 
         if (!$checkExistMember) {
             $saveMember = $this->member->insert([
@@ -51,7 +51,7 @@ class RegisterController extends Controller
                     'role' => 0,
                 ]);
 
-                if(Auth::attempt(['email' => request('email'), 'password' => request('password')])){
+                if (Auth::attempt(['email' => request('email'), 'password' => request('password')])) {
                     $user = Auth::user();
                     $user->sendApiEmailVerificationNotification();
                 }
@@ -75,6 +75,5 @@ class RegisterController extends Controller
         );
 
         return response()->json($data, $status);
-
     }
 }

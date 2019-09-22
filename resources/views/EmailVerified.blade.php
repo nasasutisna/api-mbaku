@@ -14,34 +14,30 @@
 
 <body>
     <center>
-    <!-- BANNER -->
-    <div class="banner">
-        <img src="https://1.bp.blogspot.com/-1vokX6HMcFI/XW4lsu1_96I/AAAAAAAAAko/3oDOwXZYItchxoEHAMBHRyLu0eyhf-9rACLcBGAs/s1600/logo_mbaku.png" class="my-img" alt="Responsive image">
-    </div>
-    <!-- end baner -->
+        <!-- BANNER -->
+        <div class="banner">
+            <img src="/image/mbaku_header.png" class="my-img" alt="Responsive image">
+        </div>
+        <!-- end baner -->
 
 
-    <div class="container">
-        @if( $status == 200)
-            <h1>{{$msg}}</h1><br>
-     
-        @elseif( $status == 400 )
-            <h1>{{$msg}}</h1><br>
+        <div class="container">
+            @if( $status == 200)
+                <h1>Verifikasi Email Berhasil</h1><br>
+                <p>{{$msg}}</p>
+            @elseif( $status == 400 )
+                <h1>Data Tidak Valid</h1><br>
+                <p>{{$msg}}</p>
+            @elseif( $status == 500 )
+                <h1>Terjadi Kesalahan, silahkan hubungi Administrator</h1><br>
+                <p>{{$msg}}</p>
+            @endif
+        </div>
 
-        @elseif( $status == 500 )
-        <h1>{{$msg}}</h1><br>
-        
-        @else
-            <h1>Verifikasi Email Berhasil</h1><br>
-            <p>Selamat Verifikasi E-mail Anda telah berhasil. silahkan buka aplikasi Mbaku kembali untuk dapat melakukan transaksi</p>
-        @endif
-    </div>
-
-    <div class="footer">
-        <p>&copy;2019 Mbaku. All rights reserved.</p>
-    </div>
-
-</center>
+        <div class="footer">
+            <p>&copy;2019 Mbaku. All rights reserved.</p>
+        </div>
+    </center>
 
     <!-- Optional JavaScript -->
 </body>

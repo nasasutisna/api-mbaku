@@ -1,0 +1,15 @@
+{
+    "intelephense.rename.exclude": [
+        "**/vendor_/**"
+    ],
+    "intelephense.files.exclude": [
+        "**/.git/**",
+        "**/.svn/**",
+        "**/.hg/**",
+        "**/CVS/**",
+        "**/.DS_Store/**",
+        "**/node_modules/**",
+        "**/bower_components/**",
+        "**/vendor_/**/{Test,test,Tests,tests}/**"
+    ]
+}

@@ -27,27 +27,31 @@ class LoanTransactionController extends Controller
         $memberID = $id;
         $overDueDay = 0;
         $dueDateFee = 0;
+        $settingValue = '';
 
         $checkTransaction = DB::table('transaction_loan')->where('memberID', $memberID)->where('transactionLoanStatus', 0)->first();
-        
+
         if($checkTransaction != null){
 
             $libraryID = $checkTransaction->libraryID;
             $due =  $checkTransaction->transactionLoanDueDate;
             $dueDate = new DateTime($due);
             $currentDate = new DateTIME(date('Ymd'));
-            
+
             //validate book loan is overdue or no
             if($currentDate > $dueDate){
                 $dueTotal = $dueDate->diff($currentDate);
                 $overDueDay = $dueTotal->days;
 
                 $checkSetting = DB::table('setting')->select('settingValue')->where('libraryID',$libraryID)->first();
-                $settingValue = json_decode($checkSetting->settingValue);
-                $dueDateFee = $settingValue->dueDateFee;
+
+                if($checkSetting){
+                    $settingValue = json_decode($checkSetting->settingValue);
+                    $dueDateFee = $settingValue->dueDateFee;
+                }
             }
         }
-        
+
         $query = $this->transaction_loan;
         $query->select('transaction_loan.*', 'library.libraryName', 'library.libraryAddress', 'university.universityName',
                         'member.memberFirstName', 'member.memberLastName', 'member.memberPhone',
@@ -68,7 +72,7 @@ class LoanTransactionController extends Controller
             'book' => $book,
             'bookTotal' => $total,
             'overdueDay' => $overDueDay,
-            'overDueFee' => $overDueFee    
+            'overDueFee' => $overDueFee
         );
 
         return response()->json($data);
@@ -92,7 +96,7 @@ class LoanTransactionController extends Controller
         $query->leftjoin('book', 'book.bookID', '=', 'transaction_loan.bookID');
         $query->where('transaction_loan.memberID', $memberID);
         $query->where('transactionLoanStatus', 1);
-        
+
         $total = $query->count();
         $totalPage = ceil($total / $limit);
 
@@ -132,7 +136,7 @@ class LoanTransactionController extends Controller
         $query->where('transaction_loan.libraryID', $libraryID);
         $query->where('transactionLoanStatus', 0);
         $query->where('transactionLoanDueDate', '<', $currentDate);
-        
+
         $total = $query->count();
         $totalPage = ceil($total / $limit);
 
@@ -159,7 +163,7 @@ class LoanTransactionController extends Controller
         $limit = $request->input('limit') ? $request->input('limit') : 10;
 
         $skip = ($page == 1) ? $page - 1 : (($page - 1) * $limit);
-        
+
         $query = $this->transaction_loan;
         $query->select('transaction_loan.*', 'library.libraryName', 'library.libraryAddress', 'university.universityName',
                         'member.memberFirstName', 'member.memberLastName', 'member.memberPhone',
@@ -197,7 +201,7 @@ class LoanTransactionController extends Controller
         $limit = $request->input('limit') ? $request->input('limit') : 10;
 
         $skip = ($page == 1) ? $page - 1 : (($page - 1) * $limit);
-        
+
         $query = $this->transaction_loan;
         $query->select('transaction_loan.*', 'library.libraryName', 'library.libraryAddress', 'university.universityName',
                         'member.memberFirstName', 'member.memberLastName', 'member.memberPhone',
@@ -284,7 +288,7 @@ class LoanTransactionController extends Controller
         $memberID = $request->input('memberID');
         $bookID = $request->input('bookID');
         $dueDate = $request->input('transactionLoanDueDate');
-        
+
         $member = $this->member_premium->where('memberID', $memberID)->where('memberApproval', 1)->first();
         $library = $this->library->where('libraryID', $libraryID)->first();
         $checkLoanBook = $this->transaction_loan->where('memberID', $memberID)->where('transactionLoanStatus', 0)->first();
@@ -369,10 +373,10 @@ class LoanTransactionController extends Controller
                                 'nominal' => $fee,
                                 'saldoLogType' => 'Debit',
                                 'paymentType' => 'Mbaku Wallet',
-                            ]);     
+                            ]);
 
                             DB::commit(); // all good
-                                
+
                             $msg = 'loan book is success';
                         }
                     }
@@ -387,9 +391,9 @@ class LoanTransactionController extends Controller
                     $status = 422;
                     $msg = 'member saldo is not enough';
                 }
-                
+
             }
-           
+
         }
 
         $data = array(
@@ -426,7 +430,7 @@ class LoanTransactionController extends Controller
                 if($paymentType == "e-wallet"){
                     $getMember = $this->member_premium->where('memberID', $memberID)->where('memberApproval', 1)->first();
                     $memberSaldo = $getMember->memberPremiumSaldo;
-                    
+
                     //validation member saldo
                     if($memberSaldo >= $overDueFee){
                         //kredit saldo member
@@ -436,7 +440,7 @@ class LoanTransactionController extends Controller
                         //debet saldo library
                         $librarySaldo = $this->library->where('libraryID', $libraryID)->first();
                         $debet = $overDueFee + $librarySaldo->librarySaldo;
-                        $updateLibrary = DB::table('library')->where('libraryID', $libraryID)->update(['librarySaldo' => $debet]); 
+                        $updateLibrary = DB::table('library')->where('libraryID', $libraryID)->update(['librarySaldo' => $debet]);
 
                         //insert member_saldo_log
                         DB::table('member_saldo_log')->insert([
@@ -453,14 +457,14 @@ class LoanTransactionController extends Controller
                             'saldoLogType' => 'Debit',
                             'paymentType' => 'Mbaku Wallet',
                         ]);
-                                
+
                     }
                     else{
                         $data = array(
                             'status' => 422,
                             'message' => 'member saldo is not enough',
                         );
-                
+
                         return response()->json($data);
                         exit();
                     }
@@ -485,7 +489,7 @@ class LoanTransactionController extends Controller
                     ]);
                 }
             }
-        
+
             // return book transaction
             if (count($bookID) > 0) {
                 foreach ($bookID as $key => $value) {
@@ -512,7 +516,7 @@ class LoanTransactionController extends Controller
         );
 
         return response()->json($data);
-        
+
     }
 
     public function updateStokBook($transaction,$bookID)

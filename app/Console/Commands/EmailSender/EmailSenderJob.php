@@ -60,9 +60,10 @@ class EmailSenderJob extends Command
             if ($emailObject) {
                 $emailObject->emailSentDt = Carbon::now()->toDateTimeString();
                 try {
-                    $emailContent = str_replace('{{imgBase64}}', base64_encode(file_get_contents(public_path('image/mbaku_header.png'))), $emailObject->emailContent);
+                    $imgHeaderBase64 = base64_encode(file_get_contents(public_path('image/mbaku_header.png')));
+                    $emailContent = str_replace('{{imgBase64}}', $imgHeaderBase64, $emailObject->emailContent);
                     print("ID : " . $emailObject->emailId . " sent email to " . $emailObject->emailDest . " on " . $emailObject->emailSentDt . " in progress..." . "\r\n");
-                    Mail::send([], [], function ($message) use ($emailObject, $emailContent) {
+                    Mail::send([], [], function ($message) use ($emailObject, $emailContent, $imgHeaderBase64) {
                         $message->subject($emailObject->emailTitle);
                         $message->from(env('MAIL_USERNAME', 'noreply@mbaku.online'), 'MBAKU Administrator (noreply)');
                         $message->to($emailObject->emailDest);
@@ -70,7 +71,7 @@ class EmailSenderJob extends Command
                     });
                     $emailObject->emailSentDt = Carbon::now()->toDateTimeString();
                     print("ID : " . $emailObject->emailId . " sent email to " . $emailObject->emailDest . " is success on " . $emailObject->emailSentDt . "\r\n");
-                    //$emailSenderFcd->doMoveToSuccess($emailObject);
+                    $emailSenderFcd->doMoveToSuccess($emailObject);
                 } catch (Throwable $e) {
                     $emailObject->emailSentDt = Carbon::now()->toDateTimeString();
                     print("ID : " . $emailObject->emailId . " sent email to " . $emailObject->emailDest . " failed with error : " . $e->getMessage() . "\r\n");

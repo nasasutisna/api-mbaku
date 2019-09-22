@@ -65,6 +65,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api'] ], function () {
     Route::post('member/getStatusPayment','MemberController@getStatusPayment');
     Route::get('setting/library/{id}','SettingController@settingLibrary');
     Route::post('setting/library','SettingController@updateLibrarySetting');
+    Route::get('library/dashboard/{id}','LibraryController@dashboardLibrary');
 });
 
 Route::group(['prefix' => 'v1'], function () {

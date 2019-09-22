@@ -245,11 +245,11 @@ class LibraryController extends Controller
         if($chckLibrary != null){
             $delete = DB::table('library')->where('libraryID',$libraryID)->delete();
 
-            $msg = 'delete has successed';
+            $msg = 'Data berhasil dihapus';
         }
         else{
             $status = 422;
-            $msg = 'delete has failed';
+            $msg = 'Data gagal dihapus';
         }
         
         $data = array(
@@ -257,7 +257,7 @@ class LibraryController extends Controller
             'message' => $msg
         );
 
-        return response()->json($data);
+        return response()->json($data, $status);
     }
 
     public function dashboardLibrary($id)
@@ -298,7 +298,7 @@ class LibraryController extends Controller
                 $loanTW = DB::table('transaction_loan')->where('libraryID',$libraryID)->where('transactionLoanStatus', 0)->whereBetween('transactionLoanDate', [$lastWeek, $currentDate1])->count();
                 // print_r($bookTW); exit();
 
-                $msg = 'success';
+                $msg = 'sukses';
             }
             else{
                 $status = 422;

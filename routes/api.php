@@ -67,11 +67,11 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api'] ], function () {
     Route::post('setting/library','SettingController@updateLibrarySetting');
     Route::post('member/updateProfile','MemberController@updateProfile');
     Route::get('library/dashboard/{id}','LibraryController@dashboardLibrary');
+    Route::get('book/delete/{id}','BookController@deleteBook');
 });
 
 Route::group(['prefix' => 'v1'], function () {
     Route::post('login','LoginController@processLogin');
-    Route::get('login/generateToken','LoginController@generateToken');
     Route::post('register','RegisterController@registerUser');
     Route::get('invalidToken','LoginController@invalidToken')->name('invalid-token');
     Route::get('email/verify/{id}', 'VerificationApiController@verify')->name('verificationapi.verify');

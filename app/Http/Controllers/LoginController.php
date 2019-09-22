@@ -47,7 +47,7 @@ class LoginController extends Controller
                     $user = $this->staff->where('staffEmail','=',$checkUser->email)->first();
                 }
 
-                $msg = 'success';
+                $msg = 'login berhasil';
 
                 $userLogin = array(
                     'userInfo' => [],
@@ -93,8 +93,6 @@ class LoginController extends Controller
             $msg = 'Email tidak terdaftar';
         }
 
-
-
         $data = array(
             'msg' => $msg,
             'user' => $userLogin,
@@ -104,13 +102,7 @@ class LoginController extends Controller
             ),
         );
 
-
         return response()->json($data,$status);
-    }
-
-    public function generateToken(){
-        $token = 'MBAKU-'.hash('sha256', Str::random(32));
-        return $token;
     }
 
     public function invalidToken(Request $request){
@@ -118,7 +110,7 @@ class LoginController extends Controller
         $data = [];
         $isToken = false;
         $status = 401;
-        $msg = 'Unauthorization';
+        $msg = 'Tidak terautentikasi';
 
         $data = array(
             'status' => $status,
@@ -126,14 +118,14 @@ class LoginController extends Controller
             'isToken' => $isToken
         );
 
-        return response()->json($data);
+        return response()->json($data, $status);
     }
 
     public function logout(Request $request)
     {
         $request->user()->token()->revoke();
         return response()->json([
-            'message' => 'Successfully logged out'
+            'message' => 'Logout berhasil'
         ]);
     }
 

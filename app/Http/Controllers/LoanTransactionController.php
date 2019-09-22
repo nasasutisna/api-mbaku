@@ -294,13 +294,13 @@ class LoanTransactionController extends Controller
         //validation loanbook
         if($checkLoanBook != null){
             $status = 422;
-            $msg = 'this member is borrowing the book';
+            $msg = 'anggota ini sedang meminjam buku';
         }
         else{
             //validation member premium
             if ($member == null){
                 $status = 422;
-                $msg = 'this member is not premium';
+                $msg = 'anggota ini bukan akun premium';
             }
             else{
                 //totalKredit = bookTotal * loanFee
@@ -352,7 +352,7 @@ class LoanTransactionController extends Controller
                                 'memberID' => $memberID,
                                 'nominal' => $totalKredit,
                                 'saldoLogType' => 'Kredit',
-                                'paymentType' => 'Mbaku Wallet',
+                                'paymentType' => 'dompet mbaku',
                             ]);
 
                             //insert library_saldo_log
@@ -360,7 +360,7 @@ class LoanTransactionController extends Controller
                                 'libraryID' => $libraryID,
                                 'nominal' => $debitLibrary,
                                 'saldoLogType' => 'Debit',
-                                'paymentType' => 'Mbaku Wallet',
+                                'paymentType' => 'dompet mbaku',
                             ]);
 
                             //insert fee to mbaku_saldo_log
@@ -368,24 +368,24 @@ class LoanTransactionController extends Controller
                             DB::table('mbaku_saldo_log')->insert([
                                 'nominal' => $fee,
                                 'saldoLogType' => 'Debit',
-                                'paymentType' => 'Mbaku Wallet',
+                                'paymentType' => 'dompet mbaku',
                             ]);     
 
                             DB::commit(); // all good
                                 
-                            $msg = 'loan book is success';
+                            $msg = 'Transaksi peminjaman berhasil';
                         }
                     }
                     catch (\Exception $e) {
                         DB::rollback(); // something went wrong
 
                         $status = 422;
-                        $msg = 'loan book is fail';
+                        $msg = 'Transaksi peminjaman gagal';
                     }
                 }
                 else{
                     $status = 422;
-                    $msg = 'member saldo is not enough';
+                    $msg = 'saldo member tidak cukup';
                 }
                 
             }
@@ -397,7 +397,7 @@ class LoanTransactionController extends Controller
             'message' => $msg
         );
 
-        return response()->json($data);
+        return response()->json($data, $status);
     }
 
     public function returnTransaction(Request $request)
@@ -443,7 +443,7 @@ class LoanTransactionController extends Controller
                             'memberID' => $memberID,
                             'nominal' => $overDueFee,
                             'saldoLogType' => 'Kredit',
-                            'paymentType' => 'Mbaku Wallet',
+                            'paymentType' => 'dompet mbaku',
                         ]);
 
                         //insert library_saldo_log
@@ -451,14 +451,14 @@ class LoanTransactionController extends Controller
                             'libraryID' => $libraryID,
                             'nominal' => $overDueFee,
                             'saldoLogType' => 'Debit',
-                            'paymentType' => 'Mbaku Wallet',
+                            'paymentType' => 'dompet mbaku',
                         ]);
                                 
                     }
                     else{
                         $data = array(
                             'status' => 422,
-                            'message' => 'member saldo is not enough',
+                            'message' => 'saldo member tidak cukup',
                         );
                 
                         return response()->json($data);
@@ -473,7 +473,7 @@ class LoanTransactionController extends Controller
                         'memberID' => $memberID,
                         'nominal' => $overDueFee,
                         'saldoLogType' => 'Kredit',
-                        'paymentType' => 'Cash',
+                        'paymentType' => 'tunai',
                     ]);
 
                     //insert library_saldo_log
@@ -481,7 +481,7 @@ class LoanTransactionController extends Controller
                         'libraryID' => $libraryID,
                         'nominal' => $overDueFee,
                         'saldoLogType' => 'Debit',
-                        'paymentType' => 'Cash',
+                        'paymentType' => 'tunai',
                     ]);
                 }
             }
@@ -497,13 +497,13 @@ class LoanTransactionController extends Controller
 
             DB::commit(); // all good
 
-            $msg = 'return book is success';
+            $msg = 'Pengembalian buku berhasil';
         }
         catch (\Exception $e) {
             DB::rollback(); // something went wrong
 
             $status = 422;
-            $msg = 'return book is fail';
+            $msg = 'Pengembalian buku gagal';
         }
 
         $data = array(
@@ -511,7 +511,7 @@ class LoanTransactionController extends Controller
             'message' => $msg
         );
 
-        return response()->json($data);
+        return response()->json($data, $status);
         
     }
 

@@ -63,7 +63,7 @@ class EbookController extends Controller
 
         // searching
         if ($keyword != '' && $keyword != 'undefined') {
-            $query = $query->where('ebook.ebookTitle', $keyword);
+            $query = $query->where('ebook.ebookTitle','like','%'.$keyword.'%');
         }
 
         $total = $query->count();
@@ -319,7 +319,7 @@ class EbookController extends Controller
             $status = 422;
             $msg = 'delete has failed';
         }
-        
+
         $data = array(
             'status' => $status,
             'message' => $msg

@@ -43,11 +43,20 @@ class EmailSenderJob extends Command
 
     public function handle()
     {
-        while (true) {
+        $index = 0;
+        $isLooping = true;
+        while ($isLooping) {
             $this->doSchedule();
 
             // biar ngeloop setiap satu detik
             sleep(1);
+
+            // schedulernya akan ngeloop sebanyak 30 kali
+            if ($index > 30) {
+                $isLooping = false;
+            } else {
+                $index++;
+            }
         }
     }
 

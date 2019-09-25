@@ -49,9 +49,6 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api']], function () {
     Route::get('book/getMostSearch', 'BookController@getMostSearch');
     Route::post('category/getCategory', 'CategoryController@getCategory');
     Route::get('logout', 'LoginController@logout');
-    Route::post('ebook/getEbook', 'EbookController@getEbook');
-    Route::post('ebook/checkMyFeedBack', 'EbookController@checkMyFeedBack');
-    Route::post('ebook/addFeedBack', 'EbookController@addFeedBack');
     Route::get('member/detail/{id}', 'MemberController@getDetail');
     Route::post('member/update', 'MemberController@updateMember');
     Route::post('member/profile/upload', 'MemberController@updatePhotoProfile');
@@ -59,7 +56,6 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api']], function () {
     Route::post('member/upgrade', 'MemberController@upgradeUserPremium');
     Route::post('member/uploadPhotoKTP', 'MemberController@uploadPhotoKTP');
     Route::post('member/checkMemberStatus', 'MemberController@checkMemberStatus');
-    Route::post('member/topUpSaldo', 'MemberController@topUpSaldo');
     Route::post('member/saveSaldo', 'MemberController@saveSaldo');
     Route::post('member/getStatusPayment', 'MemberController@getStatusPayment');
     Route::post('payment/ebook', 'PaymentController@purchase');
@@ -72,9 +68,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api']], function () {
     Route::post('payment/ebook/save', 'PaymentController@savePaymentEbook');
     Route::post('member/upgrade', 'MemberController@upgradeUserPremium');
     Route::post('member/uploadPhotoKTP', 'MemberController@uploadPhotoKTP');
-    Route::post('member/checkMemberStatus', 'MemberController@checkMemberStatus');
     Route::post('member/topUpSaldo', 'MemberController@topUpSaldo');
-    Route::post('member/saveSaldo', 'MemberController@saveSaldo');
     Route::post('member/getStatusPayment', 'MemberController@getStatusPayment');
     Route::get('setting/library/{id}', 'SettingController@settingLibrary');
     Route::post('setting/library', 'SettingController@updateLibrarySetting');

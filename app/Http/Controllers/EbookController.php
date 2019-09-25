@@ -112,7 +112,7 @@ class EbookController extends Controller
 
         return response()->json($data, 200);
     }
-    
+
     public function store(Request $request)
     {
         $msg = '';
@@ -236,9 +236,11 @@ class EbookController extends Controller
 
         if($query){
             $data['allowedRead'] = true;
+            $data['expireDate'] = $query->expireDate;
         }
         else{
             $data['allowedRead'] = false;
+            $data['expireDate'] = null;
         }
 
         return response()->json($data, 200);

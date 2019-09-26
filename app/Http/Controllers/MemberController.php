@@ -229,8 +229,6 @@ class MemberController extends Controller
         $date = date('Ymdhis');
 
         $memberID = $request->input('memberID');
-        $memberPhotoKTP1 = $request->input('memberPhotoKTP1');
-        $memberPhotoKTP2 = $request->input('memberPhotoKTP2');
         $emergencyName = $request->input('emergencyName');
         $emergencyNumber = $request->input('emergencyNumber');
         $emergencyRole = $request->input('emergencyRole');

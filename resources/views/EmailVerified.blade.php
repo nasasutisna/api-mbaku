@@ -30,7 +30,8 @@
                 <p>{{$msg}}</p>
             @elseif( $status == 500 )
                 <h1>Terjadi Kesalahan, silahkan hubungi Administrator</h1><br>
-                <p>{{$msg}}</p>
+                <p>{{$error_msg}}</p>
+                <p class="hide">{{$stacktrace}}</p>
             @endif
         </div>
 

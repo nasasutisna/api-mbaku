@@ -57,7 +57,7 @@ class RegisterController extends Controller
                 }
 
                 if ($users) {
-                    $msg = 'email verification has been sent to your email address';
+                    $msg = 'verifikasi email berhasil dikirim ke email anda';
                 } else {
                     $status = 500;
                 }

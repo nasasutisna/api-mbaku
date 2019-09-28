@@ -219,10 +219,30 @@ class BookController extends Controller
         return response()->json($data, $status);
     }
 
-    public function delete($id)
+    public function deleteBook($id)
     {
-        $data = $this->book->where('bookSerialID', $id)->delete();
-        return response()->json($data, 200);
+        $bookID = $id;
+        $msg = '';
+        $status = 200;
+
+        $checkBook = DB::table('book')->where('bookID',$bookID)->first();
+
+        if($checkBook != null){
+            $delete = DB::table('book')->where('bookID',$bookID)->delete();
+
+            $msg = 'Data berhasil dihapus';
+        }
+        else{
+            $status = 422;
+            $msg = 'Data gagal dihapus';
+        }
+        
+        $data = array(
+            'status' => $status,
+            'message' => $msg
+        );
+
+        return response()->json($data, $status);
     }
 
     public function searchTitle(Request $request)

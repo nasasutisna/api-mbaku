@@ -49,30 +49,25 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api']], function () {
     Route::get('book/getMostSearch', 'BookController@getMostSearch');
     Route::post('category/getCategory', 'CategoryController@getCategory');
     Route::get('logout', 'LoginController@logout');
-    Route::get('member/detail/{id}', 'MemberController@getDetail');
-    Route::post('member/update', 'MemberController@updateMember');
-    Route::post('member/profile/upload', 'MemberController@updatePhotoProfile');
-    Route::post('payment/ebook/save', 'PaymentController@savePaymentEbook');
-    Route::post('member/upgrade', 'MemberController@upgradeUserPremium');
-    Route::post('member/uploadPhotoKTP', 'MemberController@uploadPhotoKTP');
-    Route::post('member/checkMemberStatus', 'MemberController@checkMemberStatus');
-    Route::post('member/saveSaldo', 'MemberController@saveSaldo');
-    Route::post('member/getStatusPayment', 'MemberController@getStatusPayment');
-    Route::post('payment/ebook', 'PaymentController@purchase');
-    Route::post('ebook/getEbook', 'EbookController@getEbook');
-    Route::post('ebook/checkMyFeedBack', 'EbookController@checkMyFeedBack');
-    Route::post('ebook/addFeedBack', 'EbookController@addFeedBack');
-    Route::get('member/detail/{id}', 'MemberController@getDetail');
-    Route::post('member/update', 'MemberController@updateMember');
-    Route::post('member/profile/upload', 'MemberController@updatePhotoProfile');
-    Route::post('payment/ebook/save', 'PaymentController@savePaymentEbook');
-    Route::post('member/upgrade', 'MemberController@upgradeUserPremium');
-    Route::post('member/uploadPhotoKTP', 'MemberController@uploadPhotoKTP');
-    Route::post('member/topUpSaldo', 'MemberController@topUpSaldo');
-    Route::post('member/getStatusPayment', 'MemberController@getStatusPayment');
-    Route::get('setting/library/{id}', 'SettingController@settingLibrary');
-    Route::post('setting/library', 'SettingController@updateLibrarySetting');
-    Route::post('member/updateProfile', 'MemberController@updateProfile');
+    Route::post('payment/ebook','PaymentController@purchase');
+    Route::post('ebook/getEbook','EbookController@getEbook');
+    Route::post('ebook/checkMyFeedBack','EbookController@checkMyFeedBack');
+    Route::post('ebook/addFeedBack','EbookController@addFeedBack');
+    Route::get('member/detail/{id}','MemberController@getDetail');
+    Route::post('member/update','MemberController@updateMember');
+    Route::post('member/profile/upload','MemberController@updatePhotoProfile');
+    Route::post('payment/ebook/save','PaymentController@savePaymentEbook');
+    Route::post('member/upgrade','MemberController@upgradeUserPremium');
+    Route::post('member/uploadPhotoKTP','MemberController@uploadPhotoKTP');
+    Route::post('member/checkMemberStatus','MemberController@checkMemberStatus');
+    Route::post('member/topUpSaldo','MemberController@topUpSaldo');
+    Route::post('member/saveSaldo','MemberController@saveSaldo');
+    Route::post('member/getStatusPayment','MemberController@getStatusPayment');
+    Route::get('setting/library/{id}','SettingController@settingLibrary');
+    Route::post('setting/library','SettingController@updateLibrarySetting');
+    Route::post('member/updateProfile','MemberController@updateProfile');
+    Route::get('library/dashboard/{id}','LibraryController@dashboardLibrary');
+    Route::get('book/delete/{id}','BookController@deleteBook');
 });
 
 Route::group(['prefix' => 'v1'], function () {
@@ -85,4 +80,24 @@ Route::group(['prefix' => 'v1'], function () {
     //Route::get('email/resend', 'VerificationApiController@resend')->name('verificationapi.resend');
     Route::get('member/rejected/{memberPremiumID}', 'MemberController@memberRejected');
     Route::get('member/approved/{memberPremiumID}', 'MemberController@memberApproved');
+    Route::post('ebook/getEbook', 'EbookController@getEbook');
+    Route::post('ebook/checkMyFeedBack', 'EbookController@checkMyFeedBack');
+    Route::post('ebook/addFeedBack', 'EbookController@addFeedBack');
+    Route::get('member/detail/{id}', 'MemberController@getDetail');
+    Route::post('member/update', 'MemberController@updateMember');
+    Route::post('member/profile/upload', 'MemberController@updatePhotoProfile');
+    Route::post('payment/ebook/save', 'PaymentController@savePaymentEbook');
+    Route::post('member/upgrade', 'UpgradeMember\MemberController@upgradeUser');
+    Route::post('member/uploadPhotoKTP', 'MemberController@uploadPhotoKTP');
+    Route::post('member/checkMemberStatus', 'MemberController@checkMemberStatus');
+    Route::post('member/saveSaldo', 'MemberController@saveSaldo');
+    Route::post('member/getStatusPayment', 'MemberController@getStatusPayment');
+    Route::post('payment/ebook', 'PaymentController@purchase');
+    Route::get('setting/library/{id}', 'SettingController@settingLibrary');
+    Route::post('setting/library', 'SettingController@updateLibrarySetting');
+    Route::post('member/updateProfile', 'MemberController@updateProfile');
+});
+
+Route::group(['prefix' => 'v1'], function () {
+
 });

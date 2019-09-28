@@ -315,11 +315,11 @@ class EbookController extends Controller
         if($chckLibrary != null){
             $delete = DB::table('ebook')->where('ebookID',$ebookID)->delete();
 
-            $msg = 'delete has successed';
+            $msg = 'Data berhasil dihapus';
         }
         else{
             $status = 422;
-            $msg = 'delete has failed';
+            $msg = 'Data gagal dihapus';
         }
 
         $data = array(
@@ -327,6 +327,6 @@ class EbookController extends Controller
             'message' => $msg
         );
 
-        return response()->json($data);
+        return response()->json($data, $status);
     }
 }

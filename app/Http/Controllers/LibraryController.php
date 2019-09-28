@@ -6,6 +6,8 @@ use App\Library;
 use App\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use DateTime;
+use Carbon\Carbon;
 
 use function GuzzleHttp\json_decode;
 
@@ -243,11 +245,11 @@ class LibraryController extends Controller
         if($chckLibrary != null){
             $delete = DB::table('library')->where('libraryID',$libraryID)->delete();
 
-            $msg = 'delete has successed';
+            $msg = 'Data berhasil dihapus';
         }
         else{
             $status = 422;
-            $msg = 'delete has failed';
+            $msg = 'Data gagal dihapus';
         }
         
         $data = array(
@@ -255,6 +257,81 @@ class LibraryController extends Controller
             'message' => $msg
         );
 
-        return response()->json($data);
+        return response()->json($data, $status);
+    }
+
+    public function dashboardLibrary($id)
+    {
+        $libraryID = $id;
+        $msg = '';
+        $status = 200;
+
+        date_default_timezone_set('Asia/Jakarta');
+        $currentDate1 = new DateTIME(date('Ymd'));
+        $currentDate2 = new DateTIME(date('Ymd 23:59:59'));
+        $lastWeek = date('Ymd') - 7;
+        $thisWeek = new DateTIME(date(''.$lastWeek.' H:i:s'));
+        
+        try
+        {
+            $checkLibrary = DB::table('library')->where('libraryID',$libraryID)->first();
+
+            if($checkLibrary != null){
+                $saldo =  $checkLibrary->librarySaldo;
+                $book = DB::table('book')->where('libraryID',$libraryID);
+                $bookTotal = $book->count();
+
+                $loanTransaction = DB::table('transaction_loan')->where('libraryID',$libraryID)->where('transactionLoanStatus', 0)->where('transactionLoanDueDate', '>=', $currentDate2);
+                $loanTotal = $loanTransaction->count();
+
+                $overDue = DB::table('transaction_loan')->where('libraryID',$libraryID)->where('transactionLoanStatus', 0)->where('transactionLoanDueDate', '<', $currentDate2);
+                $overdueTotal = $overDue->count();
+
+                // ToDay
+                $saldoTD = DB::table('library_saldo_log')->where('libraryID',$libraryID)->where('paymentType', 'Mbaku Wallet')->whereBetween('createdAt', [$currentDate1, $currentDate2])->sum('nominal');
+                $bookTD = $book->whereBetween('createdAt', [$currentDate1, $currentDate2])->sum('bookTotal');
+                $loanTD = DB::table('transaction_loan')->where('libraryID',$libraryID)->where('transactionLoanStatus', 0)->where('transactionLoanDate', $currentDate1)->count();
+
+                //ThisWeek
+                $saldoTW = DB::table('library_saldo_log')->where('libraryID',$libraryID)->where('paymentType', 'Mbaku Wallet')->whereBetween('createdAt', [$thisWeek, $currentDate2])->sum('nominal');
+                $bookTW = DB::table('book')->where('libraryID',$libraryID)->whereBetween('createdAt', [$thisWeek, $currentDate2])->sum('bookTotal');
+                $loanTW = DB::table('transaction_loan')->where('libraryID',$libraryID)->where('transactionLoanStatus', 0)->whereBetween('transactionLoanDate', [$lastWeek, $currentDate1])->count();
+                // print_r($bookTW); exit();
+
+                $msg = 'sukses';
+            }
+            else{
+                $status = 422;
+                $msg = 'Perpustakaan tidak tersedia';
+            }
+
+        }
+        catch (\Exception $e) {
+            $status = 422;
+            $msg = 'terjadi keselahan';
+        }
+        
+        $data = array(
+            'status' => $status,
+            'message' => $msg,
+            'saldo' => $saldo,
+            'bookTotal' => $bookTotal,
+            'loanTotal' => $loanTotal,
+            'overdueTotal' => $overdueTotal,
+            'today' => array(
+                        'saldo' =>$saldoTD,
+                        'bookTotal' => $bookTD,
+                        'loanTotal' => $loanTD
+                
+            ),
+            'thisWeek' => array(
+                'saldo' =>$saldoTW,
+                'bookTotal' => $bookTW,
+                'loanTotal' => $loanTW
+        
+            ),
+        );
+
+        return response()->json($data, $status);
     }
 }

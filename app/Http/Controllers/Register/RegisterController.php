@@ -47,7 +47,7 @@ class RegisterController extends Controller
         } catch (Throwable $th) {
             $data = ResponseConstants::ERROR;
             $data["error_msg"] = $th->getMessage();
-            $data["stactrace"] = $th->getTraceAsString();
+            $data["stacktrace"] = $th->getTraceAsString();
         }
 
         return view('EmailVerified', $data);

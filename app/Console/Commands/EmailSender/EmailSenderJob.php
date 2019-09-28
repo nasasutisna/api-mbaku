@@ -63,7 +63,7 @@ class EmailSenderJob extends Command
     private function doSchedule()
     {
 
-        print("start scheduler kirim email. \r\n");
+        print("start scheduler kirim email on " . Carbon::now()->toDateTimeString() . ". \r\n");
         $bookingId = Carbon::now()->timestamp;
         $emailSenderFcd = new EmailSenderFacade($bookingId);
         if ($this->isFirstTime) {
@@ -80,15 +80,21 @@ class EmailSenderJob extends Command
             if ($emailObject) {
                 $emailObject->emailSentDt = Carbon::now()->toDateTimeString();
                 try {
-                    $imgHeaderBase64 = base64_encode(file_get_contents(public_path('image/mbaku_header.png')));
-
-                    $emailContent = str_replace('{{imgBase64}}', $imgHeaderBase64, $emailObject->emailContent);
                     print("ID : " . $emailObject->emailId . " sent email to " . $emailObject->emailDest . " on " . $emailObject->emailSentDt . " in progress..." . "\r\n");
-                    Mail::send([], [], function ($message) use ($emailObject, $emailContent, $imgHeaderBase64) {
+                    Mail::send([], [], function ($message) use ($emailObject) {
+                        // prepare attachment file
+                        $files = [];
+                        if (!empty($emailObject->attachment1)) array_push($files, storage_path($emailObject->attachment1));
+                        if (!empty($emailObject->attachment2)) array_push($files, storage_path($emailObject->attachment2));
+
+                        // prepare sent email message object
                         $message->subject($emailObject->emailTitle);
                         $message->from(env('MAIL_USERNAME', 'noreply@mbaku.online'), 'MBAKU Administrator (noreply)');
                         $message->to($emailObject->emailDest);
-                        $message->setBody($emailContent, 'text/html');
+                        $message->setBody($emailObject->emailContent, 'text/html');
+                        foreach ($files as $file) {
+                            $message->attach($file);
+                        }
                     });
                     $emailObject->emailSentDt = Carbon::now()->toDateTimeString();
                     print("ID : " . $emailObject->emailId . " sent email to " . $emailObject->emailDest . " is success on " . $emailObject->emailSentDt . "\r\n");
@@ -101,6 +107,6 @@ class EmailSenderJob extends Command
                 }
             }
         }
-        print("end scheduler kirim email. \r\n");
+        print("end scheduler sent email on " . Carbon::now()->toDateTimeString() . ". \r\n");
     }
 }

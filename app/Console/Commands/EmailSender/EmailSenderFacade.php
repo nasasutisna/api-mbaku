@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands\EmailSender;
 
-use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
@@ -35,6 +34,8 @@ class EmailSenderFacade
                 'emailDest' => $email->emailDest,
                 'emailTitle' => $email->emailTitle,
                 'emailContent' => $email->emailContent,
+                'attachment1' => $email->attachment1,
+                'attachment2' => $email->attachment2,
             ]);
             DB::table('email_queue')->where(['emailId' => $email->emailId])->delete();
             DB::commit();
@@ -46,7 +47,7 @@ class EmailSenderFacade
 
     public function doRollbackById($email)
     {
-        DB::table('email_queue')->where('emailId', '=', $email->emailId)->update(['bookingId' => '', 'lastTrySent' => $email->emailSentDt, 'smtpResponse' => $email->response]);
+        DB::table('email_queue')->where('emailId', '=', $email->emailId)->update(['bookingId' => '', 'lastTryDt' => $email->emailSentDt, 'smtpResponse' => $email->response, 'lastTryCount' => $email->lastTryCount + 1]);
     }
 
     public function doRollback()

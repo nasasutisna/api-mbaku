@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Midtrans;
 use Illuminate\Support\Facades\Mail;
+use Midtrans;
 
 class MemberController extends Controller
 {
@@ -94,8 +94,6 @@ class MemberController extends Controller
             $storePhoto = $photo->storeAs('public/profile/' . $memberID . '/', $filename);
         }
 
-        // print_r($request->all());
-
         $record = array(
             'memberID' => $memberID,
             'memberFirstName' => $firstName,
@@ -141,56 +139,11 @@ class MemberController extends Controller
 
         $member = DB::table($this->tbl_member)->where('memberID', $memberID)->update($content);
 
-            if ($member) {
-                $msg = 'berhasil upload';
-            } else {
-                $msg = 'gagal upload';
-                $status = 422;
-            }
-
-        $data = array(
-            'msg' => $msg,
-        );
-
-        return response()->json($data,$status);
-    }
-    public function registerAccount(Request $request)
-    {
-        // define result
-        $msg = '';
-        $status = 200;
-        $data = [];
-
-        // define table
-        $member = DB::table('member');
-        $users = DB::table('users');
-
-        // define request input
-        $email = $request->input('email');
-        $password = bcrypt($request->input('password'));
-
-        // check email member
-        $check_email = $member->where('email', '=', $email)->first();
-
-        if ($check_email) {
-            // check email users
-            $check_email_user = $users->where('email', '=', $email)->first();
-            if ($check_email_user) {
-                $status = 500;
-                $msg = 'Email sudah terdaftar';
-            } else {
-                $record = array(
-                    'email' => $email,
-                    'password' => $password,
-                );
-
-                // save users
-                $save_user = $users->insert($record);
-                $msg = 'Berhasil mendaftar';
-            }
+        if ($member) {
+            $msg = 'berhasil upload';
         } else {
-            $status = 500;
-            $msg = 'Email belum terdaftar, silahkan daftar sebagai member';
+            $msg = 'gagal upload';
+            $status = 422;
         }
 
         $data = array(
@@ -217,45 +170,6 @@ class MemberController extends Controller
         $member = DB::table($this->tbl_member);
         $data = $member->where('memberSerialID', $id)->delete();
         return response()->json($data, 200);
-    }
-
-    public function getDatamember(Request $request)
-    {
-        $arrCategory = [];
-        $pageIndex = $request->input('pageIndex');
-        $pageSize = $request->input('pageSize');
-        $sortBy = $request->input('sortBy');
-
-        $filter_category = json_decode($request->input('category'), true);
-        $keyword = $request->input('keyword');
-        $skip = ($pageIndex == 0) ? $pageIndex : ($pageIndex * $pageSize);
-
-        $query = DB::table('member');
-
-        $count_page = $query->count();
-
-        // searching
-        if ($keyword != '' && $keyword != 'undefined') {
-            $query = $query->where('firstName', 'like', '%' . $keyword . '%');
-            $query = $query->orWhere('memberID', 'like', '%' . $keyword . '%');
-            $count_page = count($query->get());
-        }
-
-        $query->skip($skip);
-        $query->limit($pageSize);
-        $query->orderBy('memberSerialID', 'desc');
-
-        $query = $query->get();
-        $query = json_decode(json_encode($query), true);
-
-        $data = array(
-            'data' => $query,
-            'limit' => $pageSize + 0,
-            'page' => $pageIndex + 1,
-            'totalPage' => $count_page,
-        );
-
-        return response()->json($data);
     }
 
     public function userBanner($id)
@@ -315,8 +229,6 @@ class MemberController extends Controller
         $date = date('Ymdhis');
 
         $memberID = $request->input('memberID');
-        $memberPhotoKTP1 = $request->input('memberPhotoKTP1');
-        $memberPhotoKTP2 = $request->input('memberPhotoKTP2');
         $emergencyName = $request->input('emergencyName');
         $emergencyNumber = $request->input('emergencyNumber');
         $emergencyRole = $request->input('emergencyRole');
@@ -359,29 +271,28 @@ class MemberController extends Controller
                         'memberPhone' => $d->memberPhone,
                         'memberEmail' => $d->memberEmail,
                         'memberAddress' => $d->memberAddress,
-                        'image1' => $image1
+                        'image1' => $image1,
                     ];
 
                 }
 
-                Mail::send('approval', $data, function($message) use ($memberID, $image1, $image2 ){
+                Mail::send('approval', $data, function ($message) use ($memberID, $image1, $image2) {
                     $message->from('donotreply@mbaku.online', 'Admin MBAKU');
                     $message->to('mbakuteam@gmail.com', 'Admin MBAKU')->subject('[MBAKU] Approval Upgrade Member Premium');
-                    $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$image1));
-                    $message->attach(storage_path('app/public/memberPremium/'.$memberID.'/'.$image2));
+                    $message->attach(storage_path('app/public/memberPremium/' . $memberID . '/' . $image1));
+                    $message->attach(storage_path('app/public/memberPremium/' . $memberID . '/' . $image2));
 
                 });
 
-                
             }
             DB::commit(); // all good
 
-            $msg = 'Request has been sent';
-            
+            $msg = 'Pengajuan berhasil dikirim';
+
         } catch (\Exception $e) {
             DB::rollback();
 
-            $msg = 'Request failed to sent';
+            $msg = 'Pengajuan gagal dikirim';
             $status = 500;
         }
 
@@ -390,7 +301,7 @@ class MemberController extends Controller
             'status' => $status,
         );
 
-        return response()->json($data);
+        return response()->json($data, $status);
     }
 
     public function memberApproved($memberPremiumID)
@@ -398,7 +309,6 @@ class MemberController extends Controller
         $query = $this->member_premium->where('memberPremiumID', $memberPremiumID)->update([
             'memberApproval' => 1,
         ]);
-
 
         if ($query) {
             $member = $this->member_premium->where('memberPremiumID', $memberPremiumID)->select('memberID')->first();
@@ -409,17 +319,16 @@ class MemberController extends Controller
             ]);
 
             // print_r($updateMember); exit();
-
             if ($updateMember) {
                 $status = 200;
-                $msg = 'Request has approved';
+                $msg = 'Pengajuan berhasil disetujui';
             } else {
                 $status = 422;
-                $msg = 'Failed update member';
+                $msg = 'Update member gagal';
             }
         } else {
             $status = 500;
-            $msg = 'approval is error';
+            $msg = 'Persetujuan gagal';
         }
 
         return view('EmailVerified', ['status' => $status, 'msg' => $msg]);
@@ -431,14 +340,13 @@ class MemberController extends Controller
             'memberApproval' => 2,
         ]);
 
-
         if ($query) {
             $status = 200;
-            $msg = 'Request has rejected';
-           
+            $msg = 'Pengajuan berhasil ditolak';
+
         } else {
             $status = 500;
-            $msg = 'approval is error';
+            $msg = 'pengajuan gagal';
         }
 
         return view('EmailVerified', ['status' => $status, 'msg' => $msg]);
@@ -450,6 +358,7 @@ class MemberController extends Controller
         $memberID = $request->input('memberID');
         $data = array();
         $data['memberRole'] = 0;
+        $data['memberSaldo'] = 0;
         $data['submission'] = null;
         $memberRole = 0;
 
@@ -481,6 +390,13 @@ class MemberController extends Controller
         } else {
             $data['memberRole'] = 1;
             $data['submission'] = 'approved';
+        }
+
+        if ($data['memberRole'] == 1) {
+            $query = DB::table($this->tbl_member_premium)->where('memberID', $memberID)->first();
+            if ($query) {
+                $data['memberSaldo'] = $query->memberPremiumSaldo ? (int) $query->memberPremiumSaldo : 0;
+            }
         }
 
         return response()->json($data, 200);
@@ -567,14 +483,14 @@ class MemberController extends Controller
                 ->update(['memberPremiumSaldo' => $lastSaldo]);
 
             if ($updateSaldo) {
-                $msg = 'success';
+                $msg = 'berhasil';
             } else {
-                $msg = 'failed';
+                $msg = 'gagal';
                 $status = 422;
             }
         } else {
             $status = 422;
-            $msg = 'failed';
+            $msg = 'gagal';
         }
 
         $data['msg'] = $msg;
@@ -589,9 +505,9 @@ class MemberController extends Controller
         return response()->json($result, 200);
     }
 
-    public function downloadImage($filename,$memberID)
+    public function downloadImage($filename, $memberID)
     {
-        $path = 'profile/'.$memberID.'/'.$filename;
+        $path = 'profile/' . $memberID . '/' . $filename;
         $file = Storage::disk('public')->path($path);
 
         return response()->download($file);

@@ -18,11 +18,11 @@ class SettingController extends Controller
             $getSetting = DB::table('setting')->where('libraryID',$libraryID)->first();
 
             if($getSetting == null){
-                $msg = 'library is not exist';
+                $msg = 'perpustakaan tidak tersedia';
                 $status = 422;
             }
             else{
-                $msg = 'success';
+                $msg = 'berhasil';
                 $getSetting = json_decode(json_encode($getSetting), true);
                 $getSetting['settingValue'] = json_decode($getSetting['settingValue'],true);
             }
@@ -39,7 +39,7 @@ class SettingController extends Controller
             'librarySetting' => $getSetting,
         );
 
-        return response()->json($data);
+        return response()->json($data,$status);
     }
 
     public function updateLibrarySetting(Request $request)
@@ -55,7 +55,7 @@ class SettingController extends Controller
             $getSetting = DB::table('setting')->where('settingID', $settingID)->first();
 
             if($getSetting == null){
-                $msg = 'library is not exist';
+                $msg = 'perpustakaan tidak tersedia';
                 $status = 422;
             }
             else{
@@ -68,8 +68,8 @@ class SettingController extends Controller
 
         }
         catch (\Exception $e){
-            $msg = 'data request tidak lengkap ';
-            $status = 400;
+            $msg = 'data gagal disimpan ';
+            $status = 422;
         }
 
         $data = array(
@@ -77,6 +77,6 @@ class SettingController extends Controller
             'message' => $msg,
         );
 
-        return response()->json($data);
+        return response()->json($data, $status);
     }
 }

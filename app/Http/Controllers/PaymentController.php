@@ -16,6 +16,7 @@ class PaymentController extends Controller
     public $tbl_member_saldo_log = 'member_saldo_log';
     public $tbl_library_saldo_log = 'library_saldo_log';
     public $tbl_mbaku_saldo_log = 'mbaku_saldo_log';
+    public $tbl_payment_top_up = 'payment_top_up';
 
     public function purchase(Request $request)
     {
@@ -61,7 +62,7 @@ class PaymentController extends Controller
         if ($paymentType == 'gopay') {
             $transaction_data['enabled_payments'] = array("gopay");
         } else {
-            $transaction_data['enabled_payments'] = array("bca_va", "permata_va", "bni_va", "echannel");
+            $transaction_data['enabled_payments'] = array("bca_va", "permata_va", "bni_va", "echannel", "other_va");
         }
 
         // print_r($transaction_data);exit();
@@ -159,7 +160,7 @@ class PaymentController extends Controller
 
         $save = DB::table($this->tbl_payment_ebook)->insert($content);
 
-        if ($save) {
+        if ($save && $paymentStatus == 'settlement') {
             $dateNow = date('Y-m-d');
             $expireDate = date('Y-m-d', strtotime($dateNow . ' + 14 days'));
 
@@ -169,12 +170,25 @@ class PaymentController extends Controller
 
             $saveEbook = DB::table($this->tbl_ebook_rentals)->insert($content2);
 
-            if ($saveEbook && $saldo > 0) {
+            if ($saveEbook && $paymentType == 'saldo') {
                 $currentSaldo = (int) $saldo - (int) $amount;
                 $updateSaldo = DB::table($this->tbl_member_premium)->where('memberID', $memberID)->update(['memberPremiumSaldo' => $currentSaldo]);
 
                 if ($updateSaldo) {
                     $this->saveLogSaldo($content);
+                }
+            }
+            else{
+                $content3['saldoLogType'] = 'Debit';
+                $content3['nominal'] = $amount - ($amount * 0.1);
+                $content3['libraryID'] = $libraryID;
+                $content3['paymentType'] = $paymentType;
+                $saveLibraryLog = DB::table($this->tbl_library_saldo_log)->insert($content3);
+
+                if ($saveLibraryLog) {
+                    unset($content3['libraryID']);
+                    $content3['nominal'] = $amount * 0.1;
+                    DB::table($this->tbl_mbaku_saldo_log)->insert($content3);
                 }
             }
 
@@ -192,41 +206,90 @@ class PaymentController extends Controller
         return response()->json($data, $status);
     }
 
-    public function updateStatusOrder(Request $request)
+    public function checkPendingPaymentEbook(Request $request)
     {
-        $content = array();
         $data = array();
         $status = 200;
 
         $memberID = $request->input('memberID');
-        $transaction_token = $request->input('transaction_token');
-        $transaction_status = $request->input('transaction_status');
 
-        $content['transaction_status'] = $transaction_status;
-        // $content['transaction_time'] = $request->input('transaction_time');
+        $save = DB::table('payment_ebook')->where('memberID', $memberID)->where('paymentStatus', 'pending')->first();
 
-        $save = DB::table('payment')->where('transaction_token', $transaction_token)->update($content);
+        if ($save) {
+            $data['paymentToken'] = $save->paymentToken;
+            $data['paymentPending'] = true;
+        } else {
+            $data['paymentToken'] = null;
+            $data['paymentPending'] = false;
+        }
+
         $data['message'] = 'success';
 
         return response()->json($data, $status);
     }
 
-    public function getOrderByAnggota($memberID)
+    public function updatePaymentEbook(Request $request)
     {
+        $content = array();
         $data = array();
         $status = 200;
+        $uuid = Str::uuid();
 
-        $order = DB::table('payment')
-            ->where('memberID', $memberID)
-            ->leftjoin('book', 'book.ebookID', '=', 'payment.ebookID')
-            ->leftjoin('category', 'category.categoryID', '=', 'book.categoryID')
-            ->orderBy('payment.serial_id', 'desc')
-            ->get();
+        $libraryID = $request->input('libraryID');
+        $memberID = $request->input('memberID');
+        $ebookID = $request->input('ebookID');
+        $amount = $request->input('gross_amount');
+        $paymentStatus = $request->input('transaction_status');
+        $paymentType = $request->input('payment_type');
+        $paymentToken = $request->input('payment_token') ? $request->input('payment_token') : $uuid;
+        $saldo = $request->input('saldo') ? $request->input('saldo') : 0;
 
-        if (count($order) > 0) {
-            $data['data'] = json_decode(json_encode($order), true);
+        $content['paymentStatus'] = $paymentStatus;
+
+        $save = DB::table($this->tbl_payment_ebook)->where('paymentToken', $paymentToken)->update($content);
+
+        if ($save && $paymentStatus == 'settlement') {
+            $dateNow = date('Y-m-d');
+            $expireDate = date('Y-m-d', strtotime($dateNow . ' + 14 days'));
+
+            $content2['ebookID'] = $ebookID;
+            $content2['memberID'] = $memberID;
+            $content2['expireDate'] = $expireDate;
+
+            $saveEbook = DB::table($this->tbl_ebook_rentals)->insert($content2);
+
+            if ($saveEbook) {
+                $dateNow = date('Y-m-d');
+                $expireDate = date('Y-m-d', strtotime($dateNow . ' + 14 days'));
+
+                $content2['ebookID'] = $ebookID;
+                $content2['memberID'] = $memberID;
+                $content2['expireDate'] = $expireDate;
+
+                $saveEbook = DB::table($this->tbl_ebook_rentals)->insert($content2);
+
+                $content3['saldoLogType'] = 'Debit';
+                $content3['nominal'] = $amount - ($amount * 0.1);
+                $content3['libraryID'] = $libraryID;
+                $content3['paymentType'] = $paymentType;
+                $saveLibraryLog = DB::table($this->tbl_library_saldo_log)->insert($content3);
+
+                if ($saveLibraryLog) {
+                    unset($content3['libraryID']);
+                    $content3['nominal'] = $amount * 0.1;
+                    DB::table($this->tbl_mbaku_saldo_log)->insert($content3);
+                }
+            }
+
+            if ($saveEbook) {
+                $data['message'] = 'success';
+            } else {
+                $status = 422;
+                $data['message'] = 'failed';
+            }
         } else {
-            $data['data'] = [];
+            $status = 422;
+            $data['message'] = 'failed';
         }
 
         return response()->json($data, $status);
@@ -247,18 +310,169 @@ class PaymentController extends Controller
 
             $saveMemberLog = DB::table($this->tbl_member_saldo_log)->insert($content);
 
-            if($saveMemberLog){
+            if ($saveMemberLog) {
                 unset($content['memberID']);
                 $content['saldoLogType'] = 'Debit';
                 $content['libraryID'] = $libraryID;
+                $content['nominal'] = $amount - ($amount * 0.1);
                 $saveLibraryLog = DB::table($this->tbl_library_saldo_log)->insert($content);
 
-                if($saveLibraryLog){
+                if ($saveLibraryLog) {
                     unset($content['libraryID']);
                     $content['nominal'] = $amount * 0.1;
                     $saveMbakuLog = DB::table($this->tbl_mbaku_saldo_log)->insert($content);
                 }
             }
         }
+    }
+
+    public function savePaymentTopUp(Request $request)
+    {
+        $content = array();
+        $data = array();
+        $status = 200;
+        $uuid = Str::uuid();
+
+        $memberID = $request->input('memberID');
+        $orderID = $request->input('order_id');
+        $paymentType = $request->input('payment_type');
+        $amount = $request->input('gross_amount');
+        $paymentStatus = $request->input('transaction_status');
+        $paymentDateTime = $request->input('transaction_time') ? $request->input('transaction_time') : date('Y-m-d h:i:s');
+        $paymentToken = $request->input('payment_token') ? $request->input('payment_token') : $uuid;
+
+        $content['memberID'] = $memberID;
+        $content['orderID'] = $orderID;
+        $content['paymentType'] = $paymentType;
+        $content['amount'] = $amount;
+        $content['paymentToken'] = $paymentToken;
+        $content['paymentStatus'] = $paymentStatus;
+        $content['paymentDateTime'] = $paymentDateTime;
+
+        $save = DB::table($this->tbl_payment_top_up)->insert($content);
+
+        if ($save && $paymentStatus == 'settlement') {
+
+            $saveLog = $this->saveSaldoTopUp($content);
+
+            if ($saveLog) {
+                $data['message'] = 'success';
+            } else {
+                $status = 422;
+                $data['message'] = 'failed';
+            }
+        }
+
+        return response()->json($data, $status);
+    }
+
+    public function updatePaymentTopUp(Request $request)
+    {
+        $content = array();
+        $data = array();
+        $status = 200;
+
+        $memberID = $request->input('memberID');
+        $paymentToken = $request->input('transaction_token');
+        $paymentStatus = $request->input('transaction_status');
+        $paymentType = $request->input('payment_type');
+        $amount = $request->input('gross_amount');
+
+        $content['paymentStatus'] = $paymentStatus;
+
+        $save = DB::table($this->tbl_payment_top_up)->where('paymentToken', $paymentToken)->update($content);
+
+        if ($save && $paymentStatus == 'settlement') {
+
+            $content['memberID'] = $memberID;
+            $content['amount'] = $amount;
+            $content['paymentType'] = $paymentType;
+
+            $saveLog = $this->saveSaldoTopUp($content);
+
+            if ($saveLog) {
+                $data['message'] = 'success';
+            } else {
+                $status = 422;
+                $data['message'] = 'failed';
+            }
+
+        }
+        $data['message'] = 'success';
+
+        return response()->json($data, $status);
+    }
+
+    public function checkPendingPaymentTopUp(Request $request)
+    {
+        $data = array();
+        $status = 200;
+
+        $memberID = $request->input('memberID');
+
+        $save = DB::table($this->tbl_payment_top_up)->where('memberID', $memberID)->where('paymentStatus', 'pending')->first();
+
+        if ($save) {
+            $data['paymentToken'] = $save->paymentToken;
+            $data['paymentPending'] = true;
+        } else {
+            $data['paymentToken'] = null;
+            $data['paymentPending'] = false;
+        }
+
+        $data['message'] = 'success';
+
+        return response()->json($data, $status);
+    }
+
+    public function saveSaldoTopUp($data = array())
+    {
+        $status = 200;
+        $msg = '';
+
+        $memberID = $data['memberID'];
+        $nominal = $data['amount'];
+        $type = 'topup';
+        $paymentType = $data['paymentType'];
+
+        $content['memberID'] = $memberID;
+        $content['saldoLogType'] = 'topup';
+        $content['nominal'] = $nominal;
+        $content['paymentType'] = $paymentType;
+
+        $query = DB::table($this->tbl_member_saldo_log)->insert($content);
+
+        if ($query) {
+            $getCurrentSaldo = DB::table($this->tbl_member_premium)
+                ->select('memberPremiumSaldo')
+                ->where('memberID', $memberID)
+                ->first();
+
+            $currentSaldo = $getCurrentSaldo->memberPremiumSaldo;
+
+            if ($type == 'topup') {
+                $lastSaldo = (int) $currentSaldo + (int) $nominal;
+            } else {
+                $lastSaldo = (int) $currentSaldo - (int) $nominal;
+            }
+
+            $updateSaldo = DB::table($this->tbl_member_premium)
+                ->where('memberID', $memberID)
+                ->update(['memberPremiumSaldo' => $lastSaldo]);
+
+            if ($updateSaldo) {
+                $msg = 'success';
+            } else {
+                $msg = 'failed';
+                $status = 422;
+            }
+        } else {
+            $status = 422;
+            $msg = 'failed';
+        }
+
+        $data['msg'] = $msg;
+
+        return response()->json($data, $status);
     }
 }

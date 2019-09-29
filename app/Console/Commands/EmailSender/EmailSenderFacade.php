@@ -36,6 +36,8 @@ class EmailSenderFacade
                 'emailContent' => $email->emailContent,
                 'attachment1' => $email->attachment1,
                 'attachment2' => $email->attachment2,
+                'createdDt' => $email->createdDt,
+                'sentDt' => $email->emailSentDt,
             ]);
             DB::table('email_queue')->where(['emailId' => $email->emailId])->delete();
             DB::commit();

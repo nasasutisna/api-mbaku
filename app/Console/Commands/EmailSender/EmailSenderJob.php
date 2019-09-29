@@ -43,10 +43,10 @@ class EmailSenderJob extends Command
 
     public function handle()
     {
-        $index = 0;
+        $this->doSchedule();
+        /* $index = 0;
         $isLooping = true;
         while ($isLooping) {
-            $this->doSchedule();
 
             // biar ngeloop setiap satu detik
             sleep(0.1);
@@ -57,13 +57,12 @@ class EmailSenderJob extends Command
             } else {
                 $index++;
             }
-        }
+        } */
     }
 
     private function doSchedule()
     {
-
-        print("start scheduler kirim email on " . Carbon::now()->toDateTimeString() . ". \r\n");
+        print($this->isFirstTime . "\n\r");
         $bookingId = Carbon::now()->timestamp;
         $emailSenderFcd = new EmailSenderFacade($bookingId);
         if ($this->isFirstTime) {
@@ -107,6 +106,5 @@ class EmailSenderJob extends Command
                 }
             }
         }
-        print("end scheduler sent email on " . Carbon::now()->toDateTimeString() . ". \r\n");
     }
 }

@@ -51,8 +51,8 @@ class EmailSenderJob extends Command
             // biar ngeloop setiap satu detik
             sleep(1);
 
-            // schedulernya akan ngeloop sebanyak 30 kali
-            if ($index > 30) {
+            // schedulernya akan ngeloop sebanyak 60 kali
+            if ($index > 60) {
                 $isLooping = false;
             } else {
                 $index++;

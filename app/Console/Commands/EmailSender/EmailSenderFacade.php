@@ -22,7 +22,7 @@ class EmailSenderFacade
 
     public function doBookingEmailQueue()
     {
-        return DB::table('email_queue')->orderBy('createdDt', 'asc')->limit(100)->update(['bookingId' => $this->bookingId]);
+        return DB::table('email_queue')->orderBy('createdDt', 'asc')->limit(10)->update(['bookingId' => $this->bookingId]);
     }
 
     public function doMoveToSuccess($email)

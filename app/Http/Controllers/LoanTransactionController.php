@@ -400,120 +400,120 @@ class LoanTransactionController extends Controller
     //     return response()->json($data, $status);
     // }
 
-    public function returnTransaction(Request $request)
-    {
-        $msg = '';
-        $status = 200;
-        $tempData = [];
-        $date = date('Ymd');
+    // public function returnTransaction(Request $request)
+    // {
+    //     $msg = '';
+    //     $status = 200;
+    //     $tempData = [];
+    //     $date = date('Ymd');
 
-        $paymentType = $request->input("paymentType");
-        $transactionLoanID = $request->input('transactionLoanID');
-        $overDueFee = $request->input('overDueFee');
-        $memberID = $request->input('memberID');
-        $bookID = $request->input('bookID');
+    //     $paymentType = $request->input("paymentType");
+    //     $transactionLoanID = $request->input('transactionLoanID');
+    //     $overDueFee = $request->input('overDueFee');
+    //     $memberID = $request->input('memberID');
+    //     $bookID = $request->input('bookID');
 
-        DB::beginTransaction();
+    //     DB::beginTransaction();
 
-        //validate when insert and update to DB is error or no
-        try {
-            //validation transaction is overdue or not
-            if($overDueFee > 0){
-                $library = $this->transaction_loan->where('transactionLoanID', $transactionLoanID)->first();
-                $libraryID = $library->libraryID;
+    //     //validate when insert and update to DB is error or no
+    //     try {
+    //         //validation transaction is overdue or not
+    //         if($overDueFee > 0){
+    //             $library = $this->transaction_loan->where('transactionLoanID', $transactionLoanID)->first();
+    //             $libraryID = $library->libraryID;
 
-                //validation payment type
-                if($paymentType == "e-wallet"){
-                    $getMember = $this->member_premium->where('memberID', $memberID)->where('memberApproval', 1)->first();
-                    $memberSaldo = $getMember->memberPremiumSaldo;
+    //             //validation payment type
+    //             if($paymentType == "e-wallet"){
+    //                 $getMember = $this->member_premium->where('memberID', $memberID)->where('memberApproval', 1)->first();
+    //                 $memberSaldo = $getMember->memberPremiumSaldo;
                     
-                    //validation member saldo
-                    if($memberSaldo >= $overDueFee){
-                        //kredit saldo member
-                        $kredit = $memberSaldo - $overDueFee;
-                        $updateMember = $this->member_premium->where('memberID', $memberID)->where('memberApproval', 1)->update(['memberPremiumSaldo' => $kredit]);
+    //                 //validation member saldo
+    //                 if($memberSaldo >= $overDueFee){
+    //                     //kredit saldo member
+    //                     $kredit = $memberSaldo - $overDueFee;
+    //                     $updateMember = $this->member_premium->where('memberID', $memberID)->where('memberApproval', 1)->update(['memberPremiumSaldo' => $kredit]);
 
-                        //debet saldo library
-                        $librarySaldo = $this->library->where('libraryID', $libraryID)->first();
-                        $debet = $overDueFee + $librarySaldo->librarySaldo;
-                        $updateLibrary = DB::table('library')->where('libraryID', $libraryID)->update(['librarySaldo' => $debet]); 
+    //                     //debet saldo library
+    //                     $librarySaldo = $this->library->where('libraryID', $libraryID)->first();
+    //                     $debet = $overDueFee + $librarySaldo->librarySaldo;
+    //                     $updateLibrary = DB::table('library')->where('libraryID', $libraryID)->update(['librarySaldo' => $debet]); 
 
-                        //insert member_saldo_log
-                        DB::table('member_saldo_log')->insert([
-                            'memberID' => $memberID,
-                            'nominal' => $overDueFee,
-                            'saldoLogType' => 'Kredit',
-                            'paymentType' => 'dompet mbaku',
-                        ]);
+    //                     //insert member_saldo_log
+    //                     DB::table('member_saldo_log')->insert([
+    //                         'memberID' => $memberID,
+    //                         'nominal' => $overDueFee,
+    //                         'saldoLogType' => 'Kredit',
+    //                         'paymentType' => 'dompet mbaku',
+    //                     ]);
 
-                        //insert library_saldo_log
-                        DB::table('library_saldo_log')->insert([
-                            'libraryID' => $libraryID,
-                            'nominal' => $overDueFee,
-                            'saldoLogType' => 'Debit',
-                            'paymentType' => 'dompet mbaku',
-                        ]);
+    //                     //insert library_saldo_log
+    //                     DB::table('library_saldo_log')->insert([
+    //                         'libraryID' => $libraryID,
+    //                         'nominal' => $overDueFee,
+    //                         'saldoLogType' => 'Debit',
+    //                         'paymentType' => 'dompet mbaku',
+    //                     ]);
                                 
-                    }
-                    else{
-                        $data = array(
-                            'status' => 422,
-                            'message' => 'saldo member tidak cukup',
-                        );
+    //                 }
+    //                 else{
+    //                     $data = array(
+    //                         'status' => 422,
+    //                         'message' => 'saldo member tidak cukup',
+    //                     );
                 
-                        return response()->json($data);
-                        exit();
-                    }
-                }
-                //payment Type == cash
-                else{
+    //                     return response()->json($data);
+    //                     exit();
+    //                 }
+    //             }
+    //             //payment Type == cash
+    //             else{
 
-                    //insert member_saldo_log
-                    DB::table('member_saldo_log')->insert([
-                        'memberID' => $memberID,
-                        'nominal' => $overDueFee,
-                        'saldoLogType' => 'Kredit',
-                        'paymentType' => 'tunai',
-                    ]);
+    //                 //insert member_saldo_log
+    //                 DB::table('member_saldo_log')->insert([
+    //                     'memberID' => $memberID,
+    //                     'nominal' => $overDueFee,
+    //                     'saldoLogType' => 'Kredit',
+    //                     'paymentType' => 'tunai',
+    //                 ]);
 
-                    //insert library_saldo_log
-                    DB::table('library_saldo_log')->insert([
-                        'libraryID' => $libraryID,
-                        'nominal' => $overDueFee,
-                        'saldoLogType' => 'Debit',
-                        'paymentType' => 'tunai',
-                    ]);
-                }
-            }
+    //                 //insert library_saldo_log
+    //                 DB::table('library_saldo_log')->insert([
+    //                     'libraryID' => $libraryID,
+    //                     'nominal' => $overDueFee,
+    //                     'saldoLogType' => 'Debit',
+    //                     'paymentType' => 'tunai',
+    //                 ]);
+    //             }
+    //         }
         
-            // return book transaction
-            if (count($bookID) > 0) {
-                foreach ($bookID as $key => $value) {
-                    $this->updateStokBook('returnBook',$value['bookID']);
-                }
+    //         // return book transaction
+    //         if (count($bookID) > 0) {
+    //             foreach ($bookID as $key => $value) {
+    //                 $this->updateStokBook('returnBook',$value['bookID']);
+    //             }
 
-                $returnBook = DB::table('transaction_loan')->whereIn('transactionLoanID',$transactionLoanID)->update(["transactionLoanReturnDate" => $date, "transactionLoanStatus" => 1]);
-            }
+    //             $returnBook = DB::table('transaction_loan')->whereIn('transactionLoanID',$transactionLoanID)->update(["transactionLoanReturnDate" => $date, "transactionLoanStatus" => 1]);
+    //         }
 
-            DB::commit(); // all good
+    //         DB::commit(); // all good
 
-            $msg = 'Pengembalian buku berhasil';
-        }
-        catch (\Exception $e) {
-            DB::rollback(); // something went wrong
+    //         $msg = 'Pengembalian buku berhasil';
+    //     }
+    //     catch (\Exception $e) {
+    //         DB::rollback(); // something went wrong
 
-            $status = 422;
-            $msg = 'Pengembalian buku gagal';
-        }
+    //         $status = 422;
+    //         $msg = 'Pengembalian buku gagal';
+    //     }
 
-        $data = array(
-            'status' => $status,
-            'message' => $msg
-        );
+    //     $data = array(
+    //         'status' => $status,
+    //         'message' => $msg
+    //     );
 
-        return response()->json($data, $status);
+    //     return response()->json($data, $status);
         
-    }
+    // }
 
     public function updateStokBook($transaction,$bookID)
     {

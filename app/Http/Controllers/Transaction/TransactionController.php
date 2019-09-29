@@ -32,4 +32,23 @@ class TransactionController extends Controller
 
         return response()->json($data, $data['status']);
     }
+
+    public function returnTransaction(Request $request)
+    {
+        $data = [];
+        try {
+            $returnTansaction = new TransactionFacade();
+            $returnTansaction->doReturnTransaction($request);
+
+            $data = ResponseConstants::TRANSACTION_RETURN_SUCCESS;
+        } catch (ResponseException $th) {
+            $data = $th->getResponse();
+        } catch (Throwable $th) {
+            $data = ResponseConstants::ERROR;
+            $data['error_msg'] = $th->getMessage();
+            $data['stactrace'] = $th->getTraceAsString();
+        }
+
+        return response()->json($data, $data['status']);
+    }
 }

@@ -232,8 +232,8 @@ class MemberController extends Controller
         $emergencyName = $request->input('emergencyName');
         $emergencyNumber = $request->input('emergencyNumber');
         $emergencyRole = $request->input('emergencyRole');
-        $image1 = $request->input('image1');
-        $image2 = $request->input('image2');
+        $image1 = $request->input('memberPhotoKTP1');
+        $image2 = $request->input('memberPhotoKTP2');
 
         $content = array(
             'memberID' => $memberID,

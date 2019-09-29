@@ -47,23 +47,72 @@ class TransactionFacade
                 // update saldo library
                 $this->doUpdateSaldoLibrary($request->libraryID, $amountLoan);
 
-                //insert into table log payment book loan
+                //insert into table log payment_loan
                 $this->doInsertLogPayment($request, $loanFee);
 
                 //insert into table member saldo log
-                $this->doInsertMemberSaldoLog($request, $amountLoan);
+                $this->doInsertMemberSaldoLog($request->memberID, $amountLoan);
 
                 //insert into table library saldo log
-                $this->doInsertLibrarySaldoLog($request, $amountLoan);
+                $this->doInsertLibrarySaldoLog($request->libraryID, $amountLoan);
 
                 //insert into table mbaku saldo log
-                $this->doInsertMbakuSaldoLog($request, $amountLoan);
+                $this->doInsertMbakuSaldoLog($amountLoan);
 
                 DB::commit();
             } catch (Exception $e) {
                 DB::rollBack();
                 throw new Exception($e);
             }
+        }
+    }
+
+    public function doReturnTransaction(Request $request)
+    {
+        $libraryID = $this->doCheckLibrary($request->transactionLoanID);
+
+        try {
+            DB::beginTransaction();
+
+            //check validation is overdue
+            if($request->overDueFee > 0){
+                //check validation payment type
+                if ($request->paymentType == "e-wallet")
+                {
+                    if ($this->doCheckSaldoMember($request->memberID) < $request->overDueFee ) {
+                        // check validation saldo member with member over due fee
+                        throw new ResponseException(ResponseConstants::TRANSACTION_INSUFFICIENT_SALDO);
+                        exit();
+                    }else{
+                        // update saldo member
+                        $this->doUpdateSaldoMember($request->memberID, $request->overDueFee);
+
+                        // update saldo library
+                        $this->doUpdateSaldoLibrary($libraryID, $request->overDueFee, $isOverDue ='true');
+
+                        //insert into table member saldo log
+                        $this->doInsertMemberSaldoLog($request->memberID, $request->overDueFee);
+
+                        //insert into table library saldo log
+                        $this->doInsertLibrarySaldoLog($libraryID, $request->overDueFee, $overDue='true');
+                    }
+
+                } else {
+                    //insert into table member saldo log
+                    $this->doInsertMemberSaldoLog($request->memberID, $request->overDueFee, $paymentType='tunai');
+
+                    //insert into table library saldo log
+                    $this->doInsertLibrarySaldoLog($libraryID, $request->overDueFee, $overDue='true', $paymentType = 'tunai');
+                }
+            }
+
+            //update transaction to return
+            $this->doReturn($request);
+        
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw new Exception($e);
         }
     }
 
@@ -86,6 +135,22 @@ class TransactionFacade
         $loanFee = $settingValue->loanFee;
         
         return $loanFee;
+    }
+
+    private function doCheckDueDateFee($libraryID)
+    {
+        $checkSetting = DB::table('setting')->select('settingValue')->where('libraryID',$libraryID)->first();
+        $settingValue = json_decode($checkSetting->settingValue);
+        $dueDateFee = $settingValue->dueDateFee;
+        
+        return $dueDateFee;
+    }
+
+    private function doCheckLibrary($transactionLoanID)
+    {
+        $checkLibrary = DB::table('transaction_loan')->where('transactionLoanID', $transactionLoanID)->first();
+        $libraryID = $checkLibrary->libraryID;
+        return $libraryID;
     }
 
     private function doCheckSaldoMember($memberID)
@@ -138,15 +203,22 @@ class TransactionFacade
         $updateSaldoMember = DB::table('member_premium')->where('memberID', $memberID)->where('memberApproval', 1)->update(['memberPremiumSaldo' => $total]);
     }
 
-    private function doUpdateSaldoLibrary($libraryID, $amountLoan)
+    private function doUpdateSaldoLibrary($libraryID, $amountLoan, $isOverDue = 'false')
     {
+        $total = 0;
         //get saldo library
         $librarySaldo = DB::table('library')->where('libraryID', $libraryID)->value('librarySaldo');
         
-        //total fee sharing to mbaku 10%
-        $feeSharing = $amountLoan - ($amountLoan * 0.1);
-        //total debit saldo library
-        $total = $librarySaldo + $feeSharing;
+        if($isOverDue == 'true'){
+            //total debit saldo library
+            $total = $librarySaldo + $amountLoan;
+        } else {
+            //total fee sharing to mbaku 10%
+            $feeSharing = $amountLoan - ($amountLoan * 0.1);
+            //total debit saldo library
+            $total = $librarySaldo + $feeSharing;
+        }
+        
         //update saldo library
         $updateSaldolibrary = DB::table('library')->where('libraryID', $libraryID)->update(['librarySaldo' => $total]);
     }
@@ -167,30 +239,34 @@ class TransactionFacade
         }
     }
 
-    private function doInsertMemberSaldoLog($member, $amountLoan)
+    private function doInsertMemberSaldoLog($memberID, $amountLoan, $paymentType = 'dompet mbaku')
     {
         DB::table('member_saldo_log')->insert([
-            'memberID' => $member->memberID,
+            'memberID' => $memberID,
             'nominal' => $amountLoan,
             'saldoLogType' => 'Kredit',
-            'paymentType' => 'dompet mbaku',
+            'paymentType' => $paymentType,
         ]);
     }
 
-    private function doInsertLibrarySaldoLog($library, $amountLoan)
+    private function doInsertLibrarySaldoLog($libraryID, $amountLoan, $overDue='false', $paymentType = 'dompet mbaku')
     {
-        //total fee sharing to mbaku 10%
-        $debitLibrary = $amountLoan - ($amountLoan * 0.1);
+        $debitLibrary = $amountLoan;
 
+        if($overDue=='false'){
+            //total fee sharing to mbaku 10%
+            $debitLibrary = $amountLoan - ($amountLoan * 0.1);
+        }
+        
         DB::table('library_saldo_log')->insert([
-            'libraryID' => $library->libraryID,
+            'libraryID' => $libraryID,
             'nominal' => $debitLibrary,
             'saldoLogType' => 'Debit',
-            'paymentType' => 'dompet mbaku',
+            'paymentType' => $paymentType,
         ]);
     }
 
-    private function doInsertMbakuSaldoLog($request, $amountLoan)
+    private function doInsertMbakuSaldoLog($amountLoan)
     {
         //insert fee to mbaku_saldo_log
         $fee = $amountLoan * 0.1;
@@ -200,5 +276,18 @@ class TransactionFacade
             'saldoLogType' => 'Debit',
             'paymentType' => 'dompet mbaku',
         ]);   
+    }
+
+    private function doReturn($return)
+    {
+        $date = date('Ymd');
+
+        if (count($return->bookID) > 0) {
+            foreach ($return->bookID as $key => $value) {
+                $this->updateStokBook('returnBook',$value['bookID']);
+            }
+
+            $returnBook = DB::table('transaction_loan')->whereIn('transactionLoanID',$return->transactionLoanID)->update(["transactionLoanReturnDate" => $date, "transactionLoanStatus" => 1]);
+        }
     }
 }

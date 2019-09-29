@@ -93,6 +93,8 @@ class MemberController extends Controller
             $filename = str_replace(' ', '_', date('Ymdhis') . '_' . $photo->getClientOriginalName() . '.' . $photo->extension());
             $storePhoto = $photo->storeAs('public/profile/' . $memberID . '/', $filename);
         }
+        print($filename);
+        print($photo->extension());
 
         $record = array(
             'memberID' => $memberID,
@@ -208,7 +210,7 @@ class MemberController extends Controller
         $memberPhotoKTP = $request->file('file');
 
         $date = date('Ymdhis');
-        $fileName = str_replace(' ', '_', $date . '_' . $memberPhotoKTP->getClientOriginalName());
+        $fileName = str_replace(' ', '_', $date . '_' . $memberPhotoKTP->getClientOriginalName() . '.' . $memberPhotoKTP->extension());
         $memberPhotoKTP->storeAs('public/memberPremium/' . $memberID, $fileName);
 
         $data = array(

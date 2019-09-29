@@ -106,10 +106,10 @@ class MemberController extends Controller
     public function uploadPhotoKTP(Request $request)
     {
         $memberID = $request->input('memberID');
-        $memberPhotoKTP = $request->file('file');
+        $memberPhotoKTP = $request->file('photo');
 
         $date = date('Ymdhis');
-        $fileName = str_replace(' ', '_', $date . '_' . $memberPhotoKTP->getClientOriginalName());
+        $fileName = $memberID . '_' . $date . '.' . $memberPhotoKTP->extension();
         $memberPhotoKTP->storeAs('public/memberPremium/' . $memberID, $fileName);
 
         $data = array(

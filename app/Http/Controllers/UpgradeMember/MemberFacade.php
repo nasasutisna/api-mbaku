@@ -19,10 +19,10 @@ class MemberFacade
     {
         try {
             //get path image1 
-            $image1 = 'app/public/memberPremium/'.$request->memberID.'/'.$request->memberPhotoKTP1;
+            $image1 = 'app/public/memberPremium/' . $request->memberID . '/' . $request->memberPhotoKTP1;
 
             //get path image2
-            $image2 = 'app/public/memberPremium/'.$request->memberID.'/'.$request->memberPhotoKTP2;
+            $image2 = 'app/public/memberPremium/' . $request->memberID . '/' . $request->memberPhotoKTP2;
 
             DB::beginTransaction();
 
@@ -92,8 +92,8 @@ class MemberFacade
         $dataPremium = DB::table('member_premium')->where('memberID', $emailQueue->memberID)->where('memberApproval', 0)->first();
 
         //url approval
-        $btnApprove = url('api/v1/member/approved/'.$dataPremium->memberPremiumID);
-        $btnReject = url('api/v1/member/rejected/'.$dataPremium->memberPremiumID);
+        $btnApprove = url('api/v1/member/approved/' . $dataPremium->memberPremiumID);
+        $btnReject = url('api/v1/member/rejected/' . $dataPremium->memberPremiumID);
 
         $emailContent = str_replace('{{id}}', $emailQueue->memberID, $emailContent);
         $emailContent = str_replace('{{name}}', $dataMember->memberFirstName . ' ' . $dataMember->memberLastName, $emailContent);

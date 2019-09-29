@@ -57,7 +57,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api']], function () {
     Route::post('member/update', 'MemberController@updateMember');
     Route::post('member/profile/upload', 'MemberController@updatePhotoProfile');
     Route::post('payment/ebook/save', 'PaymentController@savePaymentEbook');
-    Route::post('member/upgrade', 'MemberController@upgradeUserPremium');
+    Route::post('member/upgrade', 'UpgradeMember\MemberController@upgradeUser');
     Route::post('member/uploadPhotoKTP', 'MemberController@uploadPhotoKTP');
     Route::post('member/checkMemberStatus', 'MemberController@checkMemberStatus');
     Route::post('member/topUpSaldo', 'MemberController@topUpSaldo');

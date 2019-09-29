@@ -16,6 +16,8 @@ class ResponseConstants
     const VERIFY_USER_EXPIRY = array('status' => 400, 'msg' => 'Link verifikasi email telah kadaluarsa, Silahkan melakukan registrasi ulang akun MBAKU.');
 
     const SUBMISSION_SUCCESS = array('status' => 200, 'msg' => 'Pengajuan anda sedang kami proses, silahkan tunggu persetujuan maximal 2 hari kerja.');
+    const SUBMISSION_APPROVE_SUCCESS = array('status' => 200, 'msg' => 'Pengajuan Upgrade berhasil DITERIMA.');
+    const SUBMISSION_REJECT_SUCCESS = array('status' => 200, 'msg' => 'Pengajuan Upgrade berhasil DITOLAK.');
 
     const TRANSACTION_SUCCESS = array('status' => 200, 'msg' => 'Transaksi peminjaman berhasil.');
     const TRANSACTION_RETURN_SUCCESS = array('status' => 200, 'msg' => 'Transaksi pengembalian berhasil.');

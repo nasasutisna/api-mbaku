@@ -90,7 +90,7 @@ class MemberController extends Controller
 
         $photo = $request->file("photo");
         if ($photo) {
-            $filename = str_replace(' ', '_', date('Ymdhis') . '_' . $photo->getClientOriginalName());
+            $filename = str_replace(' ', '_', date('Ymdhis') . '_' . $photo->getClientOriginalName() . '.' . $photo->extension());
             $storePhoto = $photo->storeAs('public/profile/' . $memberID . '/', $filename);
         }
 
@@ -200,7 +200,6 @@ class MemberController extends Controller
         );
 
         return response()->json($data);
-
     }
 
     public function uploadPhotoKTP(Request $request)
@@ -273,7 +272,6 @@ class MemberController extends Controller
                         'memberAddress' => $d->memberAddress,
                         'image1' => $image1,
                     ];
-
                 }
 
                 Mail::send('approval', $data, function ($message) use ($memberID, $image1, $image2) {
@@ -281,14 +279,11 @@ class MemberController extends Controller
                     $message->to('mbakuteam@gmail.com', 'Admin MBAKU')->subject('[MBAKU] Approval Upgrade Member Premium');
                     $message->attach(storage_path('app/public/memberPremium/' . $memberID . '/' . $image1));
                     $message->attach(storage_path('app/public/memberPremium/' . $memberID . '/' . $image2));
-
                 });
-
             }
             DB::commit(); // all good
 
             $msg = 'Pengajuan berhasil dikirim';
-
         } catch (\Exception $e) {
             DB::rollback();
 
@@ -343,7 +338,6 @@ class MemberController extends Controller
         if ($query) {
             $status = 200;
             $msg = 'Pengajuan berhasil ditolak';
-
         } else {
             $status = 500;
             $msg = 'pengajuan gagal';

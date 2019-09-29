@@ -49,10 +49,10 @@ class EmailSenderJob extends Command
             $this->doSchedule();
 
             // biar ngeloop setiap satu detik
-            sleep(1);
+            sleep(0.1);
 
-            // schedulernya akan ngeloop sebanyak 60 kali
-            if ($index > 60) {
+            // schedulernya akan ngeloop sebanyak 600 kali (60 detik)
+            if ($index > 600) {
                 $isLooping = false;
             } else {
                 $index++;

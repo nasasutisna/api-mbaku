@@ -74,6 +74,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api']], function () {
     Route::post('payment/ebook', 'PaymentController@purchase');
 });
 
+
 Route::group(['prefix' => 'v1'], function () {
     Route::post('login', 'LoginController@processLogin');
     Route::get('login/generateToken', 'LoginController@generateToken');
@@ -82,6 +83,22 @@ Route::group(['prefix' => 'v1'], function () {
     Route::get('register/verify/{id}', 'Register\RegisterController@verifyUser');
     Route::get('member/rejected/{id}', 'UpgradeMember\MemberController@memberReject');
     Route::get('member/approved/{id}', 'UpgradeMember\MemberController@memberApprove');
+
+    Route::get('storage/{filename?}', function ($filename) {
+        $path = storage_path('app\public\\' . $filename);
+
+        if (!File::exists($path)) {
+            abort(404);
+        }
+
+        $file = File::get($path);
+        $type = File::mimeType($path);
+
+        $response = Response::make($file, 200);
+        $response->header("Content-Type", $type);
+
+        return $response;
+    })->where('filename', '(.*)');
 
     //Route::get('email/resend', 'VerificationApiController@resend')->name('verificationapi.resend');
     /*

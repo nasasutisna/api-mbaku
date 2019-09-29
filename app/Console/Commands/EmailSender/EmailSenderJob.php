@@ -43,6 +43,7 @@ class EmailSenderJob extends Command
 
     public function handle()
     {
+        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaa>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>' . $this->isFirstTime . '\n\r');
         $this->doSchedule();
         /* $index = 0;
         $isLooping = true;
@@ -62,7 +63,6 @@ class EmailSenderJob extends Command
 
     private function doSchedule()
     {
-        print($this->isFirstTime . "\n\r");
         $bookingId = Carbon::now()->timestamp;
         $emailSenderFcd = new EmailSenderFacade($bookingId);
         if ($this->isFirstTime) {

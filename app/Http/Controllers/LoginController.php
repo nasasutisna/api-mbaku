@@ -34,6 +34,7 @@ class LoginController extends Controller
         $password = $request->input('password');
 
         $checkUser = $this->users->where('email','=',$email)->first();
+        $checkRegistration = DB::table('registration')->where('memberEmail','=',$email)->first();
 
         if($checkUser){
             $pass = $checkUser->password;
@@ -44,7 +45,11 @@ class LoginController extends Controller
                     $user = $this->member->where('memberEmail','=',$checkUser->email)->first();
                 }
                 else{
-                    $user = $this->staff->where('staffEmail','=',$checkUser->email)->first();
+                    $user = $this->staff;
+                    $user->select('staff.*', 'library.*');
+                    $user->leftjoin('library', 'library.libraryID', '=',  'staff.libraryID');
+                    $user->where('staff.staffEmail','=',$checkUser->email);
+                    $user = $user->first();
                 }
 
                 $msg = 'login berhasil';
@@ -86,6 +91,11 @@ class LoginController extends Controller
                 $status = 401;
                 $msg = 'Password salah';
             }
+        }
+        else if(checkRegistration){
+            $isLogin = false;
+            $status = 401;
+            $msg = 'Email belum di verifikasi';
         }
         else{
             $isLogin = false;

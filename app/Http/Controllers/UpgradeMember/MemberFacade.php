@@ -73,6 +73,12 @@ class MemberFacade
             // update table member_premium
             $this->doUpdateMemberPremium($memberPremiumID, 2);
 
+            //get data member
+            $member = $this->getMember($memberID);
+
+            //return
+            return $member;
+
             DB::commit();
         } catch (Exception $e) {
             DB::rollBack();
@@ -143,5 +149,11 @@ class MemberFacade
         DB::table('member')->where('memberID', $memberID)->update([
             'memberRole' => 1
         ]);
+    }
+
+    private function getMember($memberID)
+    {
+        $dataMember = DB::table('member')->where("memberID", $memberID)->first();
+        return $dataMember;
     }
 }

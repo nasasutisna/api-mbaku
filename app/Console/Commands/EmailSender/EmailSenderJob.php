@@ -43,7 +43,6 @@ class EmailSenderJob extends Command
 
     public function handle()
     {
-        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaa>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>' . $this->isFirstTime . '\n\r');
         $this->doSchedule();
         /* $index = 0;
         $isLooping = true;
@@ -65,10 +64,12 @@ class EmailSenderJob extends Command
     {
         $bookingId = Carbon::now()->timestamp;
         $emailSenderFcd = new EmailSenderFacade($bookingId);
-        if ($this->isFirstTime) {
+
+        // reset schdule
+        /* if ($this->isFirstTime) {
             $emailSenderFcd->doRollback();
             $this->isFirstTime = false;
-        }
+        } */
 
         // update all data to booking;
         $emailSenderFcd->doBookingEmailQueue();

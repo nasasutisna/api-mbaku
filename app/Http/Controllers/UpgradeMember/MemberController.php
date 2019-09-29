@@ -57,9 +57,10 @@ class MemberController extends Controller
         $data = [];
         try {
             $reject = new MemberFacade();
-            $reject->doReject($id);
+            $member = $reject->doReject($id);
 
             $data = ResponseConstants::SUBMISSION_REJECT_SUCCESS;
+            $data['isReject'] = 'true';
         } catch (ResponseException $th) {
             $data = $th->getResponse();
         } catch (Throwable $th) {

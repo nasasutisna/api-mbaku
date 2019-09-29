@@ -304,53 +304,53 @@ class MemberController extends Controller
         return response()->json($data, $status);
     }
 
-    public function memberApproved($memberPremiumID)
-    {
-        $query = $this->member_premium->where('memberPremiumID', $memberPremiumID)->update([
-            'memberApproval' => 1,
-        ]);
+    // public function memberApproved($memberPremiumID)
+    // {
+    //     $query = $this->member_premium->where('memberPremiumID', $memberPremiumID)->update([
+    //         'memberApproval' => 1,
+    //     ]);
 
-        if ($query) {
-            $member = $this->member_premium->where('memberPremiumID', $memberPremiumID)->select('memberID')->first();
-            $memberID = $member->memberID;
+    //     if ($query) {
+    //         $member = $this->member_premium->where('memberPremiumID', $memberPremiumID)->select('memberID')->first();
+    //         $memberID = $member->memberID;
 
-            $updateMember = DB::table($this->tbl_member)->where('memberID', $memberID)->update([
-                'memberRole' => 1,
-            ]);
+    //         $updateMember = DB::table($this->tbl_member)->where('memberID', $memberID)->update([
+    //             'memberRole' => 1,
+    //         ]);
 
-            // print_r($updateMember); exit();
-            if ($updateMember) {
-                $status = 200;
-                $msg = 'Pengajuan berhasil disetujui';
-            } else {
-                $status = 422;
-                $msg = 'Update member gagal';
-            }
-        } else {
-            $status = 500;
-            $msg = 'Persetujuan gagal';
-        }
+    //         // print_r($updateMember); exit();
+    //         if ($updateMember) {
+    //             $status = 200;
+    //             $msg = 'Pengajuan berhasil disetujui';
+    //         } else {
+    //             $status = 422;
+    //             $msg = 'Update member gagal';
+    //         }
+    //     } else {
+    //         $status = 500;
+    //         $msg = 'Persetujuan gagal';
+    //     }
 
-        return view('EmailVerified', ['status' => $status, 'msg' => $msg]);
-    }
+    //     return view('EmailVerified', ['status' => $status, 'msg' => $msg]);
+    // }
 
-    public function memberRejected($memberPremiumID)
-    {
-        $query = $this->member_premium->where('memberPremiumID', $memberPremiumID)->update([
-            'memberApproval' => 2,
-        ]);
+    // public function memberRejected($memberPremiumID)
+    // {
+    //     $query = $this->member_premium->where('memberPremiumID', $memberPremiumID)->update([
+    //         'memberApproval' => 2,
+    //     ]);
 
-        if ($query) {
-            $status = 200;
-            $msg = 'Pengajuan berhasil ditolak';
+    //     if ($query) {
+    //         $status = 200;
+    //         $msg = 'Pengajuan berhasil ditolak';
 
-        } else {
-            $status = 500;
-            $msg = 'pengajuan gagal';
-        }
+    //     } else {
+    //         $status = 500;
+    //         $msg = 'pengajuan gagal';
+    //     }
 
-        return view('EmailVerified', ['status' => $status, 'msg' => $msg]);
-    }
+    //     return view('EmailVerified', ['status' => $status, 'msg' => $msg]);
+    // }
 
     public function checkMemberStatus(Request $request)
     {

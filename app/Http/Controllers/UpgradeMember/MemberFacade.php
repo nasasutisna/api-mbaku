@@ -19,10 +19,10 @@ class MemberFacade
     {
         try {
             //get path image1 
-            $image1 = 'app/public/memberPremium/'.$request->memberID.'/'.$request->image1;
+            $image1 = 'app/public/memberPremium/'.$request->memberID.'/'.$request->memberPhotoKTP1;
 
             //get path image2
-            $image2 = 'app/public/memberPremium/'.$request->memberID.'/'.$request->image2;
+            $image2 = 'app/public/memberPremium/'.$request->memberID.'/'.$request->memberPhotoKTP2;
 
             DB::beginTransaction();
 
@@ -31,6 +31,47 @@ class MemberFacade
 
             // insert data into email_queue table
             $this->doInsertEmailQueue($request, $image1, $image2);
+
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw new Exception($e);
+        }
+    }
+
+    public function doApprove($id)
+    {
+        $memberPremiumID = $id;
+        $memberID = DB::table('member_premium')->where("memberPremiumID", $memberPremiumID)->value('memberID');
+
+        try {
+
+            DB::beginTransaction();
+
+            // update table member_premium
+            $this->doUpdateMemberPremium($memberPremiumID, 1);
+
+            // update table member
+            $this->doUpdateMember($memberID);
+
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw new Exception($e);
+        }
+    }
+
+    public function doReject($id)
+    {
+        $memberPremiumID = $id;
+        $memberID = DB::table('member_premium')->where("memberPremiumID", $memberPremiumID)->value('memberID');
+
+        try {
+
+            DB::beginTransaction();
+
+            // update table member_premium
+            $this->doUpdateMemberPremium($memberPremiumID, 2);
 
             DB::commit();
         } catch (Exception $e) {
@@ -80,13 +121,27 @@ class MemberFacade
     {
         DB::table('member_premium')->insert([
             'memberID' => $user->memberID,
-            'memberPhotoKTP1' => $user->image1,
-            'memberPhotoKTP2' => $user->image2,
+            'memberPhotoKTP1' => $user->memberPhotoKTP1,
+            'memberPhotoKTP2' => $user->memberPhotoKTP2,
             'emergencyName' => $user->emergencyName,
             'emergencyNumber' => $user->emergencyNumber,
             'emergencyRole' => $user->emergencyRole,
             'memberPremiumSaldo' => 0,
             'memberApproval' => 0,
+        ]);
+    }
+
+    private function doUpdateMemberPremium($memberPremiumID, $approval)
+    {
+        DB::table('member_premium')->where('memberPremiumID', $memberPremiumID)->update([
+            'memberApproval' => $approval
+        ]);
+    }
+
+    private function doUpdateMember($memberID)
+    {
+        DB::table('member')->where('memberID', $memberID)->update([
+            'memberRole' => 1
         ]);
     }
 }

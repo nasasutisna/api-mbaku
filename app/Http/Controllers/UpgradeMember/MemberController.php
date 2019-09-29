@@ -32,4 +32,42 @@ class MemberController extends Controller
 
         return response()->json($data, $data['status']);
     }
+
+    public function memberApprove($id)
+    {
+        $data = [];
+        try {
+            $approve = new MemberFacade();
+            $approve->doApprove($id);
+
+            $data = ResponseConstants::SUBMISSION_APPROVE_SUCCESS;
+        } catch (ResponseException $th) {
+            $data = $th->getResponse();
+        } catch (Throwable $th) {
+            $data = ResponseConstants::ERROR;
+            $data['error_msg'] = $th->getMessage();
+            $data['stactrace'] = $th->getTraceAsString();
+        }
+
+        return view('updateMember', $data);
+    }
+
+    public function memberReject($id)
+    {
+        $data = [];
+        try {
+            $reject = new MemberFacade();
+            $reject->doReject($id);
+
+            $data = ResponseConstants::SUBMISSION_REJECT_SUCCESS;
+        } catch (ResponseException $th) {
+            $data = $th->getResponse();
+        } catch (Throwable $th) {
+            $data = ResponseConstants::ERROR;
+            $data['error_msg'] = $th->getMessage();
+            $data['stactrace'] = $th->getTraceAsString();
+        }
+
+        return view('updateMember', $data);
+    }
 }

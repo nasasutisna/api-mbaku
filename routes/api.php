@@ -85,7 +85,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::get('member/approved/{id}', 'UpgradeMember\MemberController@memberApprove');
 
     Route::get('storage/{filename?}', function ($filename) {
-        $path = storage_path('app\public\\' . $filename);
+        $path = storage_path('app/public/' . $filename);
 
         if (!File::exists($path)) {
             abort(404);

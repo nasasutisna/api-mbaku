@@ -48,7 +48,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api']], function () {
     Route::get('library/delete/{id}', 'LibraryController@deleteLibrary');
     Route::get('book/getMostSearch', 'BookController@getMostSearch');
     Route::post('category/getCategory', 'CategoryController@getCategory');
-    Route::get('logout', 'LoginController@logout');
+    Route::get('logout', 'Login\LoginController@logout');
     Route::post('payment/ebook','PaymentController@purchase');
     Route::post('ebook/getEbook','EbookController@getEbook');
     Route::post('ebook/checkMyFeedBack','EbookController@checkMyFeedBack');
@@ -75,9 +75,9 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api']], function () {
 });
 
 Route::group(['prefix' => 'v1'], function () {
-    Route::post('login', 'LoginController@processLogin');
+    Route::post('login', 'Login\LoginController@processLogin');
     Route::get('login/generateToken', 'LoginController@generateToken');
-    Route::get('invalidToken', 'LoginController@invalidToken')->name('invalid-token');
+    Route::get('invalidToken', 'Login\LoginController@invalidToken')->name('invalid-token');
     Route::post('register', 'Register\RegisterController@registerUser');
     Route::get('register/verify/{id}', 'Register\RegisterController@verifyUser');
 

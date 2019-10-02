@@ -76,9 +76,9 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api']], function () {
 
 
 Route::group(['prefix' => 'v1'], function () {
-    Route::post('login', 'LoginController@processLogin');
+    Route::post('login', 'Login\LoginController@processLogin');
     Route::get('login/generateToken', 'LoginController@generateToken');
-    Route::get('invalidToken', 'LoginController@invalidToken')->name('invalid-token');
+    Route::get('invalidToken', 'Login\LoginController@invalidToken')->name('invalid-token');
     Route::post('register', 'Register\RegisterController@registerUser');
     Route::get('register/verify/{id}', 'Register\RegisterController@verifyUser');
     Route::get('member/rejected/{id}', 'UpgradeMember\MemberController@memberReject');

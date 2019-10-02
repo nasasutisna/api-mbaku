@@ -78,6 +78,87 @@ class LoanTransactionController extends Controller
         return response()->json($data);
     }
 
+    public function getMemberBookLoan($libraryID, $memberID)
+    {
+        $overDueDay = 0;
+        $dueDateFee = 0;
+        $settingValue = '';
+
+        $checkTransaction = DB::table('transaction_loan')->where('memberID', $memberID)->where('libraryID', $libraryID)->where('transactionLoanStatus', 0)->first();
+
+        if($checkTransaction != null){
+
+            $libraryID = $checkTransaction->libraryID;
+            $due =  $checkTransaction->transactionLoanDueDate;
+            $dueDate = new DateTime($due);
+            $currentDate = new DateTIME(date('Ymd'));
+
+            //validate book loan is overdue or no
+            if($currentDate > $dueDate){
+                $dueTotal = $dueDate->diff($currentDate);
+                $overDueDay = $dueTotal->days;
+
+                $checkSetting = DB::table('setting')->select('settingValue')->where('libraryID',$libraryID)->first();
+
+                if($checkSetting){
+                    $settingValue = json_decode($checkSetting->settingValue);
+                    $dueDateFee = $settingValue->dueDateFee;
+                }
+            }
+        }
+
+        $query = $this->transaction_loan;
+        $query->select('transaction_loan.*', 'library.libraryName', 'library.libraryAddress', 'university.universityName',
+                        'member.memberFirstName', 'member.memberLastName', 'member.memberPhone',
+                        'book.bookTitle', 'book.bookWriter', 'book.bookRelease', 'book.bookCover');
+        $query->leftjoin('library', 'library.libraryID', '=', 'transaction_loan.libraryID');
+        $query->leftjoin('university', 'university.universityID', '=', 'library.universityID');
+        $query->leftjoin('member', 'member.memberID', '=', 'transaction_loan.memberID');
+        $query->leftjoin('book', 'book.bookID', '=', 'transaction_loan.bookID');
+        $query->where('transaction_loan.memberID', $memberID);
+        $query->where('transaction_loan.libraryID', $libraryID);
+        $query->where('transactionLoanStatus', 0);
+
+        $query = $query->get();
+        $total = count($query);
+        $overDueFee = $overDueDay * $dueDateFee * $total;
+        $book = json_decode(json_encode($query), true);
+
+        $data = array(
+            'book' => $book,
+            'bookTotal' => $total,
+            'overdueDay' => $overDueDay,
+            'overDueFee' => $overDueFee
+        );
+
+        return response()->json($data);
+    }
+
+    public function getDetailBook($libraryID,$bookID)
+    {
+        $status = 200;
+        $data = array();
+
+        $query = $this->book->select('category.categoryTitle', 'book.*','library.libraryName','library.libraryID','library.libraryMapsRoom')
+            ->leftjoin('category', 'category.categoryID', '=', 'book.categoryID')
+            ->leftjoin('library', 'library.libraryID', '=', 'book.libraryID')
+            ->where('bookID', $bookID)
+            ->where('book.libraryID', $libraryID);
+
+        $query = $query->first();
+
+        if($query){
+            $data['data'] = json_decode(json_encode($query), true);
+            $data['msg'] = '';
+        }
+        else{
+            $data['msg'] = 'Buku tidak ditemukan';
+            $status = 400;
+        }
+
+        return response()->json($data);
+    }
+
     public function getBookLoanHistory(Request $request)
     {
         $memberID = $request->input('memberID');

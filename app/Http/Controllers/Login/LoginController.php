@@ -66,4 +66,42 @@ class LoginController extends Controller
             'message' => 'Logout berhasil'
         ]);
     }
+
+    public function forgotPassword(Request $request)
+    {
+        $data = [];
+        try {
+            $forgot = new LoginFacade();
+            $forgot->doSendLinkReset($request);
+
+            $data = ResponseConstants::RESET_REQUEST_SUCCESS;
+        } catch (ResponseException $th) {
+            $data = $th->getResponse();
+        } catch (Throwable $th) {
+            $data = ResponseConstants::ERROR;
+            $data['error_msg'] = $th->getMessage();
+            $data['stactrace'] = $th->getTraceAsString();
+        }
+
+        return response()->json($data, $data['status']);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $data = [];
+        try {
+            $forgot = new LoginFacade();
+            $forgot->doReset($request);
+
+            $data = ResponseConstants::RESET_PASSWORD_SUCCESS;
+        } catch (ResponseException $th) {
+            $data = $th->getResponse();
+        } catch (Throwable $th) {
+            $data = ResponseConstants::ERROR;
+            $data['error_msg'] = $th->getMessage();
+            $data['stactrace'] = $th->getTraceAsString();
+        }
+
+        return response()->json($data, $data['status']);
+    }
 }

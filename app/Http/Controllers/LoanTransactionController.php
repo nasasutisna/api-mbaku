@@ -10,6 +10,7 @@ use DateTime;
 class LoanTransactionController extends Controller
 {
     public $tbl_transaction_loan = 'transaction_loan';
+    public $tbl_book = 'book';
 
     public function __construct()
     {
@@ -139,7 +140,7 @@ class LoanTransactionController extends Controller
         $status = 200;
         $data = array();
 
-        $query = $this->book->select('category.categoryTitle', 'book.*','library.libraryName','library.libraryID','library.libraryMapsRoom')
+        $query = DB::table($this->tbl_book)->select('category.categoryTitle', 'book.*','library.libraryName','library.libraryID','library.libraryMapsRoom')
             ->leftjoin('category', 'category.categoryID', '=', 'book.categoryID')
             ->leftjoin('library', 'library.libraryID', '=', 'book.libraryID')
             ->where('bookID', $bookID)

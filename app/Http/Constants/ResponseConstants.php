@@ -17,9 +17,14 @@ class ResponseConstants
 
     const LOGIN_SUCCESS = array('status' => 200, 'msg' => 'Login berhasil.');
     const LOGIN_INVALID_PASSWORD = array('status' => 400, 'msg' => 'Maaf password yang anda masukan salah.');
-    const LOGIN_USER_NOT_FOUND = array('status' => 400, 'msg' => 'Maaf email yang anda masukan tidak terdaftar.');
+    const LOGIN_USER_NOT_FOUND = array('status' => 400, 'msg' => 'Maaf email yang anda masukan belum terdaftar.');
 
-    const SUBMISSION_SUCCESS = array('status' => 200, 'msg' => 'Pengajuan anda sedang kami proses, silahkan tunggu persetujuan maximal 2 hari kerja.');
+    const RESET_REQUEST_SUCCESS = array('status' => 200, 'msg' => 'Link reset password berhasil dikirim ke alamat email anda.');
+    const RESET_PASSWORD_SUCCESS = array('status' => 200, 'msg' => 'Reset password berhasil.');
+    const RESET_ALREADY_SENT = array('status' => 400, 'msg' => 'Permintaan reset password sudah dikirim sebelumnya, silahkan cek kembali email anda.');
+    const RESET_LINK_EXPIRED = array('status' => 400, 'msg' => 'Maaf link expired, silahkan lakukan permintaan reset password kembali');
+
+    const SUBMISSION_SUCCESS = array('status' => 200, 'msg' => 'Pengajuan anda sedang kami proses, silahkan tunggu persetujuan maksimal 2 hari kerja.');
     const SUBMISSION_APPROVE_SUCCESS = array('status' => 200, 'msg' => 'Pengajuan Upgrade berhasil DITERIMA.');
     const SUBMISSION_REJECT_SUCCESS = array('status' => 200, 'msg' => 'Pengajuan Upgrade berhasil DITOLAK.');
 

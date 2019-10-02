@@ -93,7 +93,7 @@ class BookController extends Controller
         }
 
         if ($filterFromHome == 'mostsearch') {
-            $getBookTitle = $this->most_search->select('bookTitle')->where('searchValue', '>=', 3)->orderBy('searchValue', 'desc')->get('bookTitle');
+            $getBookTitle = $this->most_search->select('bookTitle')->orderBy('searchValue', 'desc')->get('bookTitle');
             $data = json_decode(json_encode($getBookTitle), true);
             $query = $query->whereIn('bookTitle', $data);
         }

@@ -237,9 +237,10 @@ class LoanTransactionController extends Controller
         $memberID = $id;
 
         $query = $this->ebook_rental;
-        $query->select('ebook_rentals.*', 'ebook.*');
+        $query->select('category.categoryTitle', 'ebook_rentals.*', 'ebook.*');
         $query->selectRaw('COALESCE((SELECT SUM(feedback.feedBackValue) FROM feedback where feedback.ebookID = ebook.ebookID),0) as feedback');
         $query->leftjoin('ebook', 'ebook.ebookID', '=',  'ebook_rentals.ebookID');
+        $query->leftjoin('category', 'category.categoryID', '=', 'ebook.categoryID');
         $query->where('ebook_rentals.memberID', $memberID);
 
         $query = $query->get();
@@ -259,9 +260,10 @@ class LoanTransactionController extends Controller
         $memberID = $id;
 
         $query = $this->feedback;
-        $query->select('feedback.*', 'ebook.*');
+        $query->select('category.categoryTitle', 'feedback.*', 'ebook.*');
         $query->selectRaw('COALESCE((SELECT SUM(feedback.feedBackValue) FROM feedback where feedback.ebookID = ebook.ebookID),0) as feedback');
         $query->leftjoin('ebook', 'ebook.ebookID', '=',  'feedback.ebookID');
+        $query->leftjoin('category', 'category.categoryID', '=', 'ebook.categoryID');
         $query->where('feedback.memberID', $memberID);
         $query->where('feedback.feedBackValue', 1);
 

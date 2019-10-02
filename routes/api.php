@@ -81,6 +81,10 @@ Route::group(['prefix' => 'v1'], function () {
     Route::get('invalidToken', 'Login\LoginController@invalidToken')->name('invalid-token');
     Route::post('register', 'Register\RegisterController@registerUser');
     Route::get('register/verify/{id}', 'Register\RegisterController@verifyUser');
+    Route::post('forgot/password', 'Login\LoginController@forgotPassword');
+    Route::post('reset/password', 'Login\LoginController@resetPassword');
+
+    //Route::get('email/resend', 'VerificationApiController@resend')->name('verificationapi.resend');
     Route::get('member/rejected/{id}', 'UpgradeMember\MemberController@memberReject');
     Route::get('member/approved/{id}', 'UpgradeMember\MemberController@memberApprove');
 

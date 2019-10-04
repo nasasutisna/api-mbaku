@@ -65,19 +65,15 @@ class MemberFacade
     {
         $memberPremiumID = $id;
         $memberID = DB::table('member_premium')->where("memberPremiumID", $memberPremiumID)->value('memberID');
-
+        $dataMember = DB::table('member')->where("memberID", $memberID)->first();
         try {
-
             DB::beginTransaction();
 
             // update table member_premium
             $this->doUpdateMemberPremium($memberPremiumID, 2);
 
-            //get data member
-            $member = $this->getMember($memberID);
-
-            //return
-            return $member;
+            // do send email notification
+            $this->doSendInfoRejected($dataMember);
 
             DB::commit();
         } catch (Exception $e) {
@@ -139,7 +135,7 @@ class MemberFacade
 
     private function doUpdateMemberPremium($memberPremiumID, $approval)
     {
-        DB::table('member_premium')->where('memberPremiumID', $memberPremiumID)->update([
+        return DB::table('member_premium')->where('memberPremiumID', $memberPremiumID)->update([
             'memberApproval' => $approval
         ]);
     }
@@ -155,5 +151,21 @@ class MemberFacade
     {
         $dataMember = DB::table('member')->where("memberID", $memberID)->first();
         return $dataMember;
+    }
+
+    private function doSendInfoRejected($dataMember)
+    {
+        // get param
+        $emailTitle = DB::table('param')->select('paramValue')->where("paramKey", "email.rejected.title")->first()->paramValue;
+        $emailContent = DB::table('param')->select('paramValue')->where("paramKey", "email.rejected.content")->first()->paramValue;
+
+        $emailContent = str_replace('{{name}}', $dataMember->memberFirstName . ' ' . $dataMember->memberLastName, $emailContent);
+
+        // do insert
+        return DB::table('email_queue')->insert([
+            'emailDest' => $dataMember->memberEmail,
+            'emailTitle' => $emailTitle,
+            'emailContent' => $emailContent
+        ]);
     }
 }

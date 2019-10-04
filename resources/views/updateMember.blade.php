@@ -23,27 +23,14 @@
 
         <div class="container">
         @if( $status == 200)
-                <h1>{{$msg}}</h1>
-                @if({{isReject}} == "true")
-                <form>
-                    <div class="form-group">
-                        <label for="nama">Nama Anda:</label>
-                        <input type="text" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="alamat">Alamat anda:</label>
-                        <input type="text" class="form-control" id="alamat">
-                    </div>		
-                    <button type="submit" class="btn btn-default">Submit</button>
-                </form>
-                @endif
-            @elseif( $status == 400 )
-                <h1>{{$msg}}</h1>
-            @elseif( $status == 500 )
-                <h1>{{$msg}}</h1><br>
-                <p>{{$error_msg}}</p>
-                <p style="display: none">{{$stacktrace}}</p>
-            @endif
+                <h4>{{$msg}}</h4>
+        @elseif( $status == 400 )
+            <h4>{{$msg}}</h4>
+        @elseif( $status == 500 )
+            <h4>{{$msg}}</h4><br>
+            <p>{{$error_msg}}</p>
+            <p style="display: none">{{$stacktrace}}</p>
+        @endif
         </div>
 
         <div class="footer">

@@ -90,7 +90,19 @@ class LoginFacade
                 }
 
             } else if ($this->doCheckEmailExistRegist($request->email)) {
-                // validation email exist and need verify
+                //check validation email need verify
+                $resent = DB::table('email_sent')->where("emailDest", '=', $request->email)->where('emailTitle', 'MBAKU - Verifikasi Pendaftaran (noreply)')->orderBy('createdDt', 'Desc')->first();
+
+                // do resent email verification
+                if($resent)
+                {
+                    DB::table('email_queue')->insert([
+                        'emailDest' => $resent->emailDest,
+                        'emailTitle' => $resent->emailTitle,
+                        'emailContent' => $resent->emailContent
+                    ]);
+                }
+                
                 throw new ResponseException(ResponseConstants::REGISTRATION_NEED_VERIFY);
             } else {
                 // validation user not found
@@ -98,6 +110,7 @@ class LoginFacade
             }
 
         } catch (Exception $e) {
+            DB::rollBack();
             throw new Exception($e);
         }
 
@@ -137,7 +150,7 @@ class LoginFacade
                 $id = DB::table('users')->where('email', $email)->value('id');
 
                 //url reset password
-                $btnReset = url('resetpassword/'.base64_encode($email).'/'.base64_encode($id).'/'.base64_encode($date));
+                $btnReset = 'mbaku://api.mbaku.online/resetpassword/'.base64_encode($email).'/'.base64_encode($id).'/'.base64_encode($date);
 
                 $emailContent = str_replace('{{url}}', $btnReset, $emailContent);
 
@@ -230,5 +243,37 @@ class LoginFacade
         }
 
         return $sentTime;
+    }
+
+    private function doInsertEmailQueue($member, $signature)
+    {
+        // get param
+        $emailQueue = json_decode($member);
+
+        print_r($emailQueue); exit();
+       
+        
+        $url = $this->generateVerifyRegistUrl($member->signature, $emailQueue->memberID, $emailQueue->getSchemeAndHttpHost());
+        $emailTitle = DB::table('param')->select('paramValue')->where("paramKey", "email.verify.title")->first()->paramValue;
+        $emailContent = DB::table('param')->select('paramValue')->where("paramKey", "email.verify.content")->first()->paramValue;
+
+        $emailContent = str_replace('{{name}}', $emailQueue->memberFirstName . ' ' . $emailQueue->memberLastName, $emailContent);
+        $emailContent = str_replace('{{mobilePhone}}', $emailQueue->memberPhone, $emailContent);
+        $emailContent = str_replace('{{email}}', $emailQueue->memberEmail, $emailContent);
+        $emailContent = str_replace('{{url}}', $url, $emailContent);
+        $emailContent = str_replace('{{host}}', $emailQueue->getSchemeAndHttpHost(), $emailContent);
+
+        // do insert
+        return DB::table('email_queue')->insert([
+            'emailDest' => $emailQueue->email,
+            'emailTitle' => $emailTitle,
+            'emailContent' => $emailContent
+        ]);
+    }
+
+    private function generateVerifyRegistUrl($signature, $memberID, $hostname)
+    {
+
+        return $hostname . '/api/v1/register/verify/' . $memberID . '?signature=' . md5($signature . $memberID);
     }
 }

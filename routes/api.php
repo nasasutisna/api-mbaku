@@ -13,9 +13,9 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
+/* Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
-});
+}); */
 
 Route::group(['prefix' => 'v1', 'middleware' => ['auth:api']], function () {
     Route::get('book/getPopularBook', 'BookController@getPopularBook');
@@ -34,6 +34,8 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api']], function () {
     Route::get('bookLoan/user/{id}', 'LoanTransactionController@getBookLoan');
     Route::post('bookLoan/library', 'LoanTransactionController@getBookLoanLibrary');
     Route::post('loanHistory/library', 'LoanTransactionController@getLoanHistoryLibrary');
+    Route::get('loan/getBook/{libraryID}/{bookID}', 'LoanTransactionController@getDetailBook');
+    Route::get('loan/getMemberBookLoan/{libraryID}/{memberID}', 'LoanTransactionController@getMemberBookLoan');
     Route::post('logSaldo', 'LoanTransactionController@logSaldo');
     Route::post('loanHistory/user', 'LoanTransactionController@getBookLoanHistory');
     Route::post('loanOverdue', 'LoanTransactionController@getBookLoanOverdue');

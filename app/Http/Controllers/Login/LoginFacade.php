@@ -80,7 +80,7 @@ class LoginFacade
                         'isLogin' => array(
                             'status' => $isLogin,
                         ),
-                    ); 
+                    );
 
                     return  $data;
 
@@ -108,12 +108,12 @@ class LoginFacade
                 // validation user not found
                 throw new ResponseException(ResponseConstants::LOGIN_USER_NOT_FOUND);
             }
-            
+
         } catch (Exception $e) {
             DB::rollBack();
             throw new Exception($e);
         }
-            
+
     }
 
     public function doSendLinkReset(Request $request)
@@ -133,7 +133,7 @@ class LoginFacade
         else if ($this->doCheckEmailQueue($email) >=  $date) {
             // check validation email in email_queue
             throw new ResponseException(ResponseConstants::RESET_ALREADY_SENT);
-        } 
+        }
         else if ($this->doCheckEmailSent($email) >=  $date ) {
             // check validation email has been sent
             throw new ResponseException(ResponseConstants::RESET_ALREADY_SENT);
@@ -181,7 +181,7 @@ class LoginFacade
         if ($expiryAt < $currentTime) {
             // check validation request date request is expire
             throw new ResponseException(ResponseConstants::RESET_LINK_EXPIRED);
-        } 
+        }
         else {
             try {
                 DB::beginTransaction();
@@ -234,7 +234,7 @@ class LoginFacade
     private function doCheckEmailSent($email)
     {
         $isOnEmailSent = DB::table('email_sent')->where("emailDest", '=', $email)->orderBy('createdDt', 'Desc')->first();
-        
+
         if($isOnEmailSent != null)
         {
             $sentTime = (new DateTime($isOnEmailSent->createdDt))->modify(5 . ' minute');

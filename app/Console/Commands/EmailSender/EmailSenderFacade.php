@@ -30,7 +30,7 @@ class EmailSenderFacade
         try {
             DB::beginTransaction();
             DB::table('email_sent')->insert([
-                'emailId' => $email->emailId,
+                'emailQueueId' => $email->emailId,
                 'emailDest' => $email->emailDest,
                 'emailTitle' => $email->emailTitle,
                 'emailContent' => $email->emailContent,

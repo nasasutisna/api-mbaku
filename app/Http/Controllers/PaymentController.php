@@ -42,7 +42,7 @@ class PaymentController extends Controller
         $custom_expiry = [
             'start_time' => date("Y-m-d H:i:s O", time()),
             'unit' => 'day',
-            'duration' => 2,
+            'duration' => 1,
         ];
 
         $item_details = [
@@ -65,7 +65,6 @@ class PaymentController extends Controller
             $transaction_data['enabled_payments'] = array("bca_va", "permata_va", "bni_va", "echannel", "other_va");
         }
 
-        // print_r($transaction_data);exit();
         $result = Midtrans::getSnapTransaction($transaction_data);
         return response()->json($result, 200);
     }

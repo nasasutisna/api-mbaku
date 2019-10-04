@@ -176,6 +176,7 @@ class MemberController extends Controller
         $email = $request->input('email');
         $phone = $request->input('phone');
         $nominal = $request->input('nominal');
+        $paymentType = $request->input('paymentType');
 
         $transaction_details = [
             'order_id' => 'MBAKU-' . time(),
@@ -191,7 +192,7 @@ class MemberController extends Controller
         $custom_expiry = [
             'start_time' => date("Y-m-d H:i:s O", time()),
             'unit' => 'day',
-            'duration' => 2,
+            'duration' => 1,
         ];
 
         $item_details = [
@@ -207,6 +208,12 @@ class MemberController extends Controller
             'customer_details' => $customer_details,
             'expiry' => $custom_expiry,
         ];
+
+        if ($paymentType == 'gopay') {
+            $transaction_data['enabled_payments'] = array("gopay");
+        } else {
+            $transaction_data['enabled_payments'] = array("bca_va", "permata_va", "bni_va", "echannel", "other_va");
+        }
 
         $result = Midtrans::getSnapTransaction($transaction_data);
         return response()->json($result, 200);

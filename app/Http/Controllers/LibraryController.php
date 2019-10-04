@@ -269,8 +269,7 @@ class LibraryController extends Controller
         date_default_timezone_set('Asia/Jakarta');
         $currentDate1 = new DateTIME(date('Ymd'));
         $currentDate2 = new DateTIME(date('Ymd 23:59:59'));
-        $lastWeek = date('Ymd') - 7;
-        $thisWeek = new DateTIME(date(''.$lastWeek.' H:i:s'));
+        $lastWeek = $currentDate1->modify(-7 . ' day');
         
         try
         {
@@ -293,8 +292,8 @@ class LibraryController extends Controller
                 $loanTD = DB::table('transaction_loan')->where('libraryID',$libraryID)->where('transactionLoanStatus', 0)->where('transactionLoanDate', $currentDate1)->count();
 
                 //ThisWeek
-                $saldoTW = DB::table('library_saldo_log')->where('libraryID',$libraryID)->where('paymentType', 'Mbaku Wallet')->whereBetween('createdAt', [$thisWeek, $currentDate2])->sum('nominal');
-                $bookTW = DB::table('book')->where('libraryID',$libraryID)->whereBetween('createdAt', [$thisWeek, $currentDate2])->sum('bookTotal');
+                $saldoTW = DB::table('library_saldo_log')->where('libraryID',$libraryID)->where('paymentType', 'Mbaku Wallet')->whereBetween('createdAt', [$lastWeek, $currentDate2])->sum('nominal');
+                $bookTW = DB::table('book')->where('libraryID',$libraryID)->whereBetween('createdAt', [$lastWeek, $currentDate2])->sum('bookTotal');
                 $loanTW = DB::table('transaction_loan')->where('libraryID',$libraryID)->where('transactionLoanStatus', 0)->whereBetween('transactionLoanDate', [$lastWeek, $currentDate1])->count();
                 // print_r($bookTW); exit();
 

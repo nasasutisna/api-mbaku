@@ -26,12 +26,12 @@ class ResponseConstants
 
     const SUBMISSION_SUCCESS = array('status' => 200, 'msg' => 'Pengajuan anda sedang kami proses, silahkan tunggu persetujuan maksimal 2 hari kerja.');
     const SUBMISSION_APPROVE_SUCCESS = array('status' => 200, 'msg' => 'Pengajuan Upgrade berhasil DITERIMA.');
-    const SUBMISSION_REJECT_SUCCESS = array('status' => 200, 'msg' => 'Pengajuan Upgrade berhasil DITOLAK.');
+    const SUBMISSION_REJECT_SUCCESS = array('status' => 200, 'msg' => 'Pengajuan Upgrade DITOLAK, Informasi terkait penolakan sudah di email ke member tersebut');
 
     const TRANSACTION_SUCCESS = array('status' => 200, 'msg' => 'Transaksi peminjaman berhasil.');
     const TRANSACTION_RETURN_SUCCESS = array('status' => 200, 'msg' => 'Transaksi pengembalian berhasil.');
     const TRANSACTION_MEMBER_NOT_PREMIUM = array('status' => 400, 'msg' => 'Akun member ini belum premium, silahkan upgrade terlebih dahulu untuk dapat melakukan transaksi peminjaman.');
     const TRANSACTION_LOAN_ALREADY_EXIST = array('status' => 400, 'msg' => 'Akun member ini sedang meminjam buku, silahkan mengembalikan buku yang dipinjam terlebih dahulu.');
-    const TRANSACTION_LIBRARY_SETTING_NOT_EXIST = array('status' => 400, 'msg' => 'Pengaturan Perpustakaan tidak ditemukan.');
+    const TRANSACTION_LIBRARY_SETTING_NOT_EXIST = array('status' => 400, 'msg' => 'Pengaturan Perpustakaan belum diinput, silahkan diinput terlebih dahulu.');
     const TRANSACTION_INSUFFICIENT_SALDO = array('status' => 400, 'msg' => 'Maaf saldo member tidak mencukupi, silahkan topup saldo terlebih dahulu.');
 }

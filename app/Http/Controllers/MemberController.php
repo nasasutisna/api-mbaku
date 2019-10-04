@@ -20,91 +20,37 @@ class MemberController extends Controller
         $this->transaction_loan = DB::table('transaction_loan');
     }
 
-    public function createMember(Request $request)
-    {
-        $msg = "";
-        $results = array();
-        $data = array();
-
-        $memberID = $request->input('memberID');
-        $firstName = $request->input('firstName');
-        $lastName = $request->input('lastName');
-        $email = $request->input('email');
-        $memberPhone = $request->input('memberPhone');
-        $password = bcrypt($request->input('password'));
-
-        $member = DB::table('member');
-        $check = $member->where('memberID', '=', $memberID)->first();
-
-        if ($check) {
-            $msg = "NIM / NIK sudah terdaftar";
-            $results = array(
-                'msg' => $msg,
-            );
-            return response()->json($results, 500);
-        } else {
-            $msg = "Berhasil mendaftar!";
-            $record = array(
-                'memberID' => $memberID,
-                'firstName' => $firstName,
-                'lastName' => $lastName,
-                'email' => $email,
-                'memberPhone' => $memberPhone,
-            );
-
-            $save_member = $member->insert($record);
-
-            if ($save_member) {
-                $record_user = array(
-                    'email' => $email,
-                    'password' => $password,
-                    'status' => 0,
-                );
-                $save_users = DB::table('users')->insert($record_user);
-            }
-
-            $results = array(
-                'msg' => $msg,
-                'data' => $save_member,
-            );
-
-            return response()->json($results);
-        }
-    }
-
     public function updateMember(Request $request)
     {
         $msg = "";
         $filename = "";
         $status = 200;
         $results = array();
-        $data = array();
+        $data = [];
 
-        $memberID = $request->input('memberID');
-        $firstName = $request->input('firstName');
-        $lastName = $request->input('lastName');
-        $email = $request->input('email');
-        $memberAddress = $request->input('memberAddress');
-        $status = $request->input('status');
-        $memberPhone = $request->input('memberPhone');
+        if (!empty($request->input('memberID')))
+            $data['memberID'] = $request->input('memberID');
+        if (!empty($request->input('firstName')))
+            $data['memberFirstName'] = $request->input('firstName');
+        if (!empty($request->input('lastName')))
+            $data['memberLastName'] = $request->input('lastName');
+        if (!empty($request->input('address')))
+            $data['memberAddress'] = $request->input('address');
+        if (!empty($request->input('phone')))
+            $data['memberPhone'] = $request->input('phone');
+        if (!empty($request->input('email')))
+            $data['memberEmail'] = $request->input('email');
+        if (!empty($request->input('gender')))
+            $data['memberGender'] = $request->input('gender');
 
         $photo = $request->file("photo");
         if ($photo) {
-            $filename = str_replace(' ', '_', date('Ymdhis') . '_' . $photo->getClientOriginalName());
-            $storePhoto = $photo->storeAs('public/profile/' . $memberID . '/', $filename);
+            $filename = date('Ymdhis') . '.' . $photo->extension();
+            $storePhoto = $photo->storeAs('public/profile/' . $data['memberID']  . '/', $filename);
+            if ($storePhoto) $data['memberPhoto'] = $filename;
         }
 
-        $record = array(
-            'memberID' => $memberID,
-            'memberFirstName' => $firstName,
-            'memberLastName' => $lastName,
-            'email' => $email,
-            'memberPhone' => $memberPhone,
-            'memberAddress' => $memberAddress,
-            'memberPhoto' => $filename,
-        );
-
-        $member = DB::table($this->tbl_member)->where('memberID', $memberID)->update($record);
+        $member = DB::table($this->tbl_member)->where('memberID', $data['memberID'])->update($data);
         $msg = "Berhasil disimpan!";
 
         $results = array(
@@ -113,44 +59,6 @@ class MemberController extends Controller
         );
 
         return response()->json($results);
-    }
-
-    public function updateProfile(Request $request)
-    {
-        $filename = '';
-        $status = 200;
-        $content = array();
-
-        $memberID = $request->input('memberID');
-        $firstName = $request->input('firstName');
-        $lastName = $request->input('lastName');
-        $phone = $request->input('phone');
-
-        $content['memberFirstName'] = $firstName;
-        $content['memberLastName'] = $lastName;
-        $content['memberPhone'] = $phone;
-
-        $photo = $request->file("file");
-        if ($photo) {
-            $filename = $photo->getClientOriginalName();
-            $photo->storeAs('public/profile/' . $memberID . '/', $filename);
-            $content['memberPhoto'] = $filename;
-        }
-
-        $member = DB::table($this->tbl_member)->where('memberID', $memberID)->update($content);
-
-        if ($member) {
-            $msg = 'berhasil upload';
-        } else {
-            $msg = 'gagal upload';
-            $status = 422;
-        }
-
-        $data = array(
-            'msg' => $msg,
-        );
-
-        return response()->json($data, $status);
     }
 
     public function getDetail($id)
@@ -163,13 +71,6 @@ class MemberController extends Controller
             ->first();
 
         return response()->json($query, 200);
-    }
-
-    public function delete($id)
-    {
-        $member = DB::table($this->tbl_member);
-        $data = $member->where('memberSerialID', $id)->delete();
-        return response()->json($data, 200);
     }
 
     public function userBanner($id)
@@ -200,16 +101,15 @@ class MemberController extends Controller
         );
 
         return response()->json($data);
-
     }
 
     public function uploadPhotoKTP(Request $request)
     {
         $memberID = $request->input('memberID');
-        $memberPhotoKTP = $request->file('file');
+        $memberPhotoKTP = $request->file('photo');
 
         $date = date('Ymdhis');
-        $fileName = str_replace(' ', '_', $date . '_' . $memberPhotoKTP->getClientOriginalName());
+        $fileName = $memberID . '_' . $date . '.' . $memberPhotoKTP->extension();
         $memberPhotoKTP->storeAs('public/memberPremium/' . $memberID, $fileName);
 
         $data = array(
@@ -218,139 +118,6 @@ class MemberController extends Controller
 
         return response()->json($data, 200);
     }
-
-    public function upgradeUserPremium(Request $request)
-    {
-
-        $msg = '';
-        $photoKTP1 = '';
-        $photoKTP2 = '';
-        $status = 200;
-        $date = date('Ymdhis');
-
-        $memberID = $request->input('memberID');
-        $emergencyName = $request->input('emergencyName');
-        $emergencyNumber = $request->input('emergencyNumber');
-        $emergencyRole = $request->input('emergencyRole');
-        $image1 = $request->input('memberPhotoKTP1');
-        $image2 = $request->input('memberPhotoKTP2');
-
-        $content = array(
-            'memberID' => $memberID,
-            'memberPhotoKTP1' => $image1,
-            'memberPhotoKTP2' => $image2,
-            'emergencyName' => $emergencyName,
-            'emergencyNumber' => $emergencyNumber,
-            'emergencyRole' => $emergencyRole,
-            'memberPremiumSaldo' => 0,
-            'memberApproval' => 0,
-        );
-
-        DB::beginTransaction();
-
-        try {
-            $query = $this->member_premium->insert($content);
-
-            if ($query) {
-                $member = DB::table('member');
-                $member->select('member_premium.*', 'member.*');
-                $member->leftjoin('member_premium', 'member_premium.memberID', '=', 'member.memberID');
-                $member->where("member.memberID", $memberID);
-                $member = $member->get();
-
-                foreach ($member as $d) {
-                    $data = [
-                        'memberPremiumID' => $d->memberPremiumID,
-                        'emergencyName' => $d->emergencyName,
-                        'emergencyNumber' => $d->emergencyNumber,
-                        'emergencyRole' => $d->emergencyRole,
-                        'memberID' => $d->memberID,
-                        'memberFirstName' => $d->memberFirstName,
-                        'memberLastName' => $d->memberLastName,
-                        'memberGender' => $d->memberGender,
-                        'memberPhone' => $d->memberPhone,
-                        'memberEmail' => $d->memberEmail,
-                        'memberAddress' => $d->memberAddress,
-                        'image1' => $image1,
-                    ];
-
-                }
-
-                Mail::send('approval', $data, function ($message) use ($memberID, $image1, $image2) {
-                    $message->from('donotreply@mbaku.online', 'Admin MBAKU');
-                    $message->to('mbakuteam@gmail.com', 'Admin MBAKU')->subject('[MBAKU] Approval Upgrade Member Premium');
-                    $message->attach(storage_path('app/public/memberPremium/' . $memberID . '/' . $image1));
-                    $message->attach(storage_path('app/public/memberPremium/' . $memberID . '/' . $image2));
-
-                });
-
-            }
-            DB::commit(); // all good
-
-            $msg = 'Pengajuan berhasil dikirim';
-
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            $msg = 'Pengajuan gagal dikirim';
-            $status = 500;
-        }
-
-        $data = array(
-            'msg' => $msg,
-            'status' => $status,
-        );
-
-        return response()->json($data, $status);
-    }
-
-    // public function memberApproved($memberPremiumID)
-    // {
-    //     $query = $this->member_premium->where('memberPremiumID', $memberPremiumID)->update([
-    //         'memberApproval' => 1,
-    //     ]);
-
-    //     if ($query) {
-    //         $member = $this->member_premium->where('memberPremiumID', $memberPremiumID)->select('memberID')->first();
-    //         $memberID = $member->memberID;
-
-    //         $updateMember = DB::table($this->tbl_member)->where('memberID', $memberID)->update([
-    //             'memberRole' => 1,
-    //         ]);
-
-    //         // print_r($updateMember); exit();
-    //         if ($updateMember) {
-    //             $status = 200;
-    //             $msg = 'Pengajuan berhasil disetujui';
-    //         } else {
-    //             $status = 422;
-    //             $msg = 'Update member gagal';
-    //         }
-    //     } else {
-    //         $status = 500;
-    //         $msg = 'Persetujuan gagal';
-    //     }
-
-    //     return view('EmailVerified', ['status' => $status, 'msg' => $msg]);
-    // }
-
-    // public function memberRejected($memberPremiumID)
-    // {
-    //     $query = $this->member_premium->where('memberPremiumID', $memberPremiumID)->update([
-    //         'memberApproval' => 2,
-    //     ]);
-
-    //     if ($query) {
-    //         $status = 200;
-    //         $msg = 'Pengajuan berhasil ditolak';
-
-    //     } else {
-    //         $status = 500;
-    //         $msg = 'pengajuan gagal';
-    //     }
-
-    //     return view('EmailVerified', ['status' => $status, 'msg' => $msg]);
-    // }
 
     public function checkMemberStatus(Request $request)
     {
@@ -503,13 +270,5 @@ class MemberController extends Controller
         $id = $request->input('id');
         $result = Midtrans::status($id);
         return response()->json($result, 200);
-    }
-
-    public function downloadImage($filename, $memberID)
-    {
-        $path = 'profile/' . $memberID . '/' . $filename;
-        $file = Storage::disk('public')->path($path);
-
-        return response()->download($file);
     }
 }

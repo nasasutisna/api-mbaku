@@ -21,7 +21,10 @@ class TransactionFacade
         $loanFee = $this->doCheckLoanFee($request->libraryID);
         $amountLoan = count($request->bookID) * $loanFee;
 
-        if ($this->doCheckMemberPremium($request->memberID) == null) {
+        if ($loanFee == null) {
+            // check validation library setting on system
+            throw new ResponseException(ResponseConstants::TRANSACTION_LIBRARY_SETTING_NOT_EXIST);
+        } else if ($this->doCheckMemberPremium($request->memberID) == null) {
             // check validation member premium
             throw new ResponseException(ResponseConstants::TRANSACTION_MEMBER_NOT_PREMIUM);
         } else if ($this->doCheckSaldoMember($request->memberID) < $amountLoan ) {
@@ -30,9 +33,6 @@ class TransactionFacade
         }else if ($this->doCheckLoanExist($request->memberID)) {
             // check validation email exist on system
             throw new ResponseException(ResponseConstants::TRANSACTION_LOAN_ALREADY_EXIST);
-        } else if ($loanFee == null) {
-            // check validation library setting on system
-            throw new ResponseException(ResponseConstants::TRANSACTION_LIBRARY_SETTING_NOT_EXIST);
         } else {
             try {
     
@@ -130,9 +130,14 @@ class TransactionFacade
     
     private function doCheckLoanFee($libraryID)
     {
+        $loanFee = null;
+
         $checkSetting = DB::table('setting')->select('settingValue')->where('libraryID',$libraryID)->first();
-        $settingValue = json_decode($checkSetting->settingValue);
-        $loanFee = $settingValue->loanFee;
+
+        if($checkSetting){
+            $settingValue = json_decode($checkSetting->settingValue);
+            $loanFee = $settingValue->loanFee;
+        }
         
         return $loanFee;
     }

@@ -74,6 +74,7 @@ Route::group(['prefix' => 'v1', 'middleware' => ['auth:api']], function () {
     Route::post('payment/updatetopup', 'PaymentController@updatePaymentTopUp');
     Route::post('payment/checkPendingPaymentTopUp', 'PaymentController@checkPendingPaymentTopUp');
     Route::post('payment/ebook', 'PaymentController@purchase');
+    Route::post('payment/ebook/checkPendingPaymentEbook', 'PaymentController@checkPendingPaymentEbook');
 });
 
 

@@ -63,10 +63,11 @@ class LibraryController extends Controller
         $libraryID = $id;
 
         $query = DB::table($this->tbl_library);
-        $query->select('library.*', 'university.universityName', 'regencies.name as libraryCity');
+        $query->select('Setting.*', 'library.*', 'university.universityName', 'regencies.name as libraryCity');
         $query->leftjoin('university', 'university.universityID', '=', 'library.universityID');
+        $query->leftjoin('setting', 'setting.libraryID', '=', 'setting.libraryID');
         $query->leftjoin('regencies', 'regencies.id', '=', 'library.libraryCity');
-        $query->where('libraryID', $libraryID);
+        $query->where('library.libraryID', $libraryID);
 
         $query = $query->first();
         $data = json_decode(json_encode($query), true);

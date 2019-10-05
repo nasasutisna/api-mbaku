@@ -35,7 +35,7 @@ class LoginController extends Controller
         }
 
         $data = array(
-            'msg' => $status,
+            'msg' => $status['msg'],
             'user' => $getLogin['user'],
             'token' => $getLogin['token'],
             'isLogin' => $getLogin['isLogin'],

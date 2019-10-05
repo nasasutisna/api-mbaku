@@ -5,6 +5,7 @@ namespace App\Http\Constants;
 class ResponseConstants
 {
     const ERROR = array('status' => 500, 'msg' => 'Terjadi kesalahan pada sistem, silahkan hubungi administrator.');
+    const SUCCESS = array('status' => 200, 'msg' => 'Sukses mendapatkan informasi akun.');
 
     const REGISTRATION_SUCCESS = array('status' => 200, 'msg' => 'Verifikasi email sudah terkirim ke kotak masuk email Anda.');
     const REGISTRATION_EMAIL_ALREADY_EXISTS = array('status' => 400, 'msg' => 'Email sudah terdaftar, silahkan masukan email lain.');

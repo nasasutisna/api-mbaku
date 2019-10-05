@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 }); */
 
 Route::group(['prefix' => 'v1', 'middleware' => ['auth:api']], function () {
+    Route::post('user/getInfo', 'User\UserController@getUserInfo');
     Route::get('book/getPopularBook', 'BookController@getPopularBook');
     Route::post('book/getBookList', 'BookController@getBookList');
     Route::post('ebook/getEbookList', 'EbookController@getEbookList');

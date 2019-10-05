@@ -150,7 +150,7 @@ class LoginFacade
                 $id = DB::table('users')->where('email', $email)->value('id');
 
                 //url reset password
-                $btnReset = 'mbaku://api.mbaku.online/resetpassword/'.base64_encode($email).'/'.base64_encode($id).'/'.base64_encode($date);
+                $btnReset = url('resetpassword/'.base64_encode($email).'/'.base64_encode($id).'/'.base64_encode($date));
 
                 $emailContent = str_replace('{{url}}', $btnReset, $emailContent);
 

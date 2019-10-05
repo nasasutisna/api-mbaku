@@ -255,36 +255,37 @@ class PaymentController extends Controller
                 $content2['memberID'] = $memberID;
                 $content2['expireDate'] = $expireDate;
 
-                DB::table($this->tbl_ebook_rentals)->insert($content2);
-                $dateNow = date('Y-m-d');
-                $expireDate = date('Y-m-d', strtotime($dateNow . ' + 14 days'));
-
-                $content2['ebookID'] = $ebookID;
-                $content2['memberID'] = $memberID;
-                $content2['expireDate'] = $expireDate;
-
+                //insert ebook rentals
                 DB::table($this->tbl_ebook_rentals)->insert($content2);
 
+                //insert library saldo log
                 $content3['saldoLogType'] = 'Debit';
                 $content3['nominal'] = $amount - ($amount * 0.1);
                 $content3['libraryID'] = $libraryID;
                 $content3['paymentType'] = $paymentType;
                 DB::table($this->tbl_library_saldo_log)->insert($content3);
 
+                // insert member saldo log
+                $content4['saldoLogType'] = 'Kredit';
+                $content4['nominal'] = $amount;
+                $content4['memberID'] = $memberID;
+                $content4['paymentType'] = $paymentType;
+                DB::table($this->tbl_member_saldo_log)->insert($content4);
+
+                // insert table mbaku log
                 unset($content3['libraryID']);
                 $content3['nominal'] = $amount * 0.1;
                 DB::table($this->tbl_mbaku_saldo_log)->insert($content3);
 
+
                 $data['message'] = 'success';
                 DB::commit();
-            } else {
-                $status = 422;
-                $data['message'] = 'transaction_status is not settlement';
             }
         } catch (\Throwable $th) {
             DB::rollBack();
             $status = 422;
-            $data['message'] = $th->getTraceAsString();
+            $status['error_msg'] = $th->getMessage();
+            $status['stactrace'] = $th->getTraceAsString();
         }
 
         return response()->json($data, $status);

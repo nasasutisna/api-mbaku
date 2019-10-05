@@ -158,7 +158,6 @@ class PaymentController extends Controller
         $content['paymentDateTime'] = $paymentDateTime;
 
         $save = DB::table($this->tbl_payment_ebook)->insert($content);
-        $data['message'] = 'success';
 
         if ($save && $paymentStatus == 'settlement') {
             $dateNow = date('Y-m-d');
@@ -197,6 +196,9 @@ class PaymentController extends Controller
                 $status = 422;
                 $data['message'] = 'failed';
             }
+        } else {
+            $status = 422;
+            $data['message'] = 'failed';
         }
 
         return response()->json($data, $status);
@@ -242,19 +244,10 @@ class PaymentController extends Controller
 
         $content['paymentStatus'] = $paymentStatus;
 
-        $save = DB::table($this->tbl_payment_ebook)->where('paymentToken', $paymentToken)->update($content);
-
-        if ($save && $paymentStatus == 'settlement') {
-            $dateNow = date('Y-m-d');
-            $expireDate = date('Y-m-d', strtotime($dateNow . ' + 14 days'));
-
-            $content2['ebookID'] = $ebookID;
-            $content2['memberID'] = $memberID;
-            $content2['expireDate'] = $expireDate;
-
-            $saveEbook = DB::table($this->tbl_ebook_rentals)->insert($content2);
-
-            if ($saveEbook) {
+        try {
+            DB::table($this->tbl_payment_ebook)->where('paymentToken', $paymentToken)->update($content);
+            if ($paymentStatus == 'settlement') {
+                DB::beginTransaction();
                 $dateNow = date('Y-m-d');
                 $expireDate = date('Y-m-d', strtotime($dateNow . ' + 14 days'));
 
@@ -262,30 +255,36 @@ class PaymentController extends Controller
                 $content2['memberID'] = $memberID;
                 $content2['expireDate'] = $expireDate;
 
-                $saveEbook = DB::table($this->tbl_ebook_rentals)->insert($content2);
+                DB::table($this->tbl_ebook_rentals)->insert($content2);
+                $dateNow = date('Y-m-d');
+                $expireDate = date('Y-m-d', strtotime($dateNow . ' + 14 days'));
+
+                $content2['ebookID'] = $ebookID;
+                $content2['memberID'] = $memberID;
+                $content2['expireDate'] = $expireDate;
+
+                DB::table($this->tbl_ebook_rentals)->insert($content2);
 
                 $content3['saldoLogType'] = 'Debit';
                 $content3['nominal'] = $amount - ($amount * 0.1);
                 $content3['libraryID'] = $libraryID;
                 $content3['paymentType'] = $paymentType;
-                $saveLibraryLog = DB::table($this->tbl_library_saldo_log)->insert($content3);
+                DB::table($this->tbl_library_saldo_log)->insert($content3);
 
-                if ($saveLibraryLog) {
-                    unset($content3['libraryID']);
-                    $content3['nominal'] = $amount * 0.1;
-                    DB::table($this->tbl_mbaku_saldo_log)->insert($content3);
-                }
-            }
+                unset($content3['libraryID']);
+                $content3['nominal'] = $amount * 0.1;
+                DB::table($this->tbl_mbaku_saldo_log)->insert($content3);
 
-            if ($saveEbook) {
                 $data['message'] = 'success';
+                DB::commit();
             } else {
                 $status = 422;
-                $data['message'] = 'failed';
+                $data['message'] = 'transaction_status is not settlement';
             }
-        } else {
+        } catch (\Throwable $th) {
+            DB::rollBack();
             $status = 422;
-            $data['message'] = 'failed';
+            $data['message'] = $th->getTraceAsString();
         }
 
         return response()->json($data, $status);
@@ -435,45 +434,38 @@ class PaymentController extends Controller
         $content['nominal'] = $nominal;
         $content['paymentType'] = $paymentType;
 
-        try {
+        $query = DB::table($this->tbl_member_saldo_log)->insert($content);
 
+        if ($query) {
+            $getCurrentSaldo = DB::table($this->tbl_member_premium)
+                ->select('memberPremiumSaldo')
+                ->where('memberID', $memberID)
+                ->first();
 
-            $query = DB::table($this->tbl_member_saldo_log)->insert($content);
+            $currentSaldo = $getCurrentSaldo->memberPremiumSaldo;
 
-            if ($query) {
-                $getCurrentSaldo = DB::table($this->tbl_member_premium)
-                    ->select('memberPremiumSaldo')
-                    ->where('memberID', $memberID)
-                    ->first();
-
-                $currentSaldo = $getCurrentSaldo->memberPremiumSaldo;
-
-                if ($type == 'topup') {
-                    $lastSaldo = (int) $currentSaldo + (int) $nominal;
-                } else {
-                    $lastSaldo = (int) $currentSaldo - (int) $nominal;
-                }
-
-                $updateSaldo = DB::table($this->tbl_member_premium)
-                    ->where('memberID', $memberID)
-                    ->update(['memberPremiumSaldo' => $lastSaldo]);
-
-                if ($updateSaldo) {
-                    $msg = 'success';
-                } else {
-                    $msg = 'failed';
-                    $status = 422;
-                }
+            if ($type == 'topup') {
+                $lastSaldo = (int) $currentSaldo + (int) $nominal;
             } else {
-                $status = 422;
-                $msg = 'failed';
+                $lastSaldo = (int) $currentSaldo - (int) $nominal;
             }
 
-            $data['msg'] = $msg;
-        } catch (\Throwable $th) {
-            echo $th->getTraceAsString();
-            return null;
+            $updateSaldo = DB::table($this->tbl_member_premium)
+                ->where('memberID', $memberID)
+                ->update(['memberPremiumSaldo' => $lastSaldo]);
+
+            if ($updateSaldo) {
+                $msg = 'success';
+            } else {
+                $msg = 'failed';
+                $status = 422;
+            }
+        } else {
+            $status = 422;
+            $msg = 'failed';
         }
+
+        $data['msg'] = $msg;
 
         return response()->json($data, $status);
     }

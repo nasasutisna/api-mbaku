@@ -158,6 +158,7 @@ class PaymentController extends Controller
         $content['paymentDateTime'] = $paymentDateTime;
 
         $save = DB::table($this->tbl_payment_ebook)->insert($content);
+        $data['message'] = 'success';
 
         if ($save && $paymentStatus == 'settlement') {
             $dateNow = date('Y-m-d');
@@ -196,9 +197,6 @@ class PaymentController extends Controller
                 $status = 422;
                 $data['message'] = 'failed';
             }
-        } else {
-            $status = 422;
-            $data['message'] = 'failed';
         }
 
         return response()->json($data, $status);

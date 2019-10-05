@@ -176,8 +176,7 @@ class PaymentController extends Controller
                 if ($updateSaldo) {
                     $this->saveLogSaldo($content);
                 }
-            }
-            else{
+            } else {
                 $content3['saldoLogType'] = 'Debit';
                 $content3['nominal'] = $amount - ($amount * 0.1);
                 $content3['libraryID'] = $libraryID;
@@ -395,7 +394,6 @@ class PaymentController extends Controller
                 $status = 422;
                 $data['message'] = 'failed';
             }
-
         }
         $data['message'] = 'success';
 
@@ -439,38 +437,45 @@ class PaymentController extends Controller
         $content['nominal'] = $nominal;
         $content['paymentType'] = $paymentType;
 
-        $query = DB::table($this->tbl_member_saldo_log)->insert($content);
+        try {
 
-        if ($query) {
-            $getCurrentSaldo = DB::table($this->tbl_member_premium)
-                ->select('memberPremiumSaldo')
-                ->where('memberID', $memberID)
-                ->first();
 
-            $currentSaldo = $getCurrentSaldo->memberPremiumSaldo;
+            $query = DB::table($this->tbl_member_saldo_log)->insert($content);
 
-            if ($type == 'topup') {
-                $lastSaldo = (int) $currentSaldo + (int) $nominal;
+            if ($query) {
+                $getCurrentSaldo = DB::table($this->tbl_member_premium)
+                    ->select('memberPremiumSaldo')
+                    ->where('memberID', $memberID)
+                    ->first();
+
+                $currentSaldo = $getCurrentSaldo->memberPremiumSaldo;
+
+                if ($type == 'topup') {
+                    $lastSaldo = (int) $currentSaldo + (int) $nominal;
+                } else {
+                    $lastSaldo = (int) $currentSaldo - (int) $nominal;
+                }
+
+                $updateSaldo = DB::table($this->tbl_member_premium)
+                    ->where('memberID', $memberID)
+                    ->update(['memberPremiumSaldo' => $lastSaldo]);
+
+                if ($updateSaldo) {
+                    $msg = 'success';
+                } else {
+                    $msg = 'failed';
+                    $status = 422;
+                }
             } else {
-                $lastSaldo = (int) $currentSaldo - (int) $nominal;
-            }
-
-            $updateSaldo = DB::table($this->tbl_member_premium)
-                ->where('memberID', $memberID)
-                ->update(['memberPremiumSaldo' => $lastSaldo]);
-
-            if ($updateSaldo) {
-                $msg = 'success';
-            } else {
-                $msg = 'failed';
                 $status = 422;
+                $msg = 'failed';
             }
-        } else {
-            $status = 422;
-            $msg = 'failed';
-        }
 
-        $data['msg'] = $msg;
+            $data['msg'] = $msg;
+        } catch (\Throwable $th) {
+            echo $th->getTraceAsString();
+            return null;
+        }
 
         return response()->json($data, $status);
     }

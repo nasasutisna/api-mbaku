@@ -18,10 +18,11 @@ class UserFacade
             $this->doUpdateShowTransFlag($request->memberID);
 
             // convert memberRole to integer
-            $user->memberRole = (int) $user['memberRole'];
+            $rsl = $user;
+            $rsl['memberRole'] = (int) $user['memberRole'];
 
             // return data user
-            return $user == null ? [] : $user;
+            return $rsl == null ? [] : $rsl;
         } catch (Exception $e) {
             DB::rollBack();
             throw new Exception($e);

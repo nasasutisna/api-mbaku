@@ -107,9 +107,10 @@ class MemberController extends Controller
     {
         $memberID = $request->input('memberID');
         $memberPhotoKTP = $request->file('photo');
+        $origiName = $request->file('fileName');
 
         $date = date('Ymdhis');
-        $fileName = $memberID . '_' . $date . '.' . $memberPhotoKTP->extension();
+        $fileName = $memberID . '_' . $date . '_' . $origiName . '.' . $memberPhotoKTP->extension();
         $memberPhotoKTP->storeAs('public/memberPremium/' . $memberID, $fileName);
 
         $data = array(

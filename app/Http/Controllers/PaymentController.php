@@ -244,6 +244,10 @@ class PaymentController extends Controller
 
         $content['paymentStatus'] = $paymentStatus;
 
+        print_r($content);
+        print_r($paymentToken);
+        exit();
+
         try {
             DB::table($this->tbl_payment_ebook)->where('paymentToken', $paymentToken)->update($content);
             if ($paymentStatus == 'settlement') {

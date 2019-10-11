@@ -18,11 +18,13 @@ class UserFacade
             $this->doUpdateShowTransFlag($request->memberID);
 
             // convert memberRole to integer
-            $rsl = $user;
-            $rsl['memberRole'] = (int) $user['memberRole'];
+            foreach ($user as $k) {
+                if ($k == 'memberRole') $user['memberRole'] = (int) $user['memberRole'];
+                else $user[$k] = $user[$k];
+            }
 
             // return data user
-            return $rsl == null ? [] : $rsl;
+            return $user == null ? [] : $user;
         } catch (Exception $e) {
             DB::rollBack();
             throw new Exception($e);
@@ -31,7 +33,7 @@ class UserFacade
 
     private function getUserInfoData($memberID)
     {
-        return DB::table(DB::raw('(select a.*, b.createdDt transDt, b.isAlreadyAlert isAlreadyAlertTrans, c.memberPremiumSaldo memberSaldo from member a 
+        return DB::table(DB::raw('(select a.*, b.createdDt transDt, b.isAlreadyAlert isAlreadyAlertTrans from member a 
             left join (select * from transaction_loan order by createdDt desc limit 1) b on a.memberID=b.memberID
             left join member_premium c on a.memberID=c.memberID) x'))->where('memberID', '=', $memberID)->first();
     }

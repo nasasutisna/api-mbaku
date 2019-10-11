@@ -52,7 +52,7 @@ class MemberFacade
             $this->doUpdateMemberPremium($memberPremiumID, 1);
 
             // update table member
-            $this->doUpdateMember($memberID);
+            $this->doUpdateMember($memberID, 1);
 
             DB::commit();
         } catch (Exception $e) {
@@ -71,6 +71,9 @@ class MemberFacade
 
             // update table member_premium
             $this->doUpdateMemberPremium($memberPremiumID, 2);
+
+            // update table member
+            $this->doUpdateMember($memberID, 0);
 
             // do send email notification
             $this->doSendInfoRejected($dataMember);
@@ -140,10 +143,10 @@ class MemberFacade
         ]);
     }
 
-    private function doUpdateMember($memberID)
+    private function doUpdateMember($memberID, $role)
     {
         DB::table('member')->where('memberID', $memberID)->update([
-            'memberRole' => 1
+            'memberRole' => $role
         ]);
     }
 

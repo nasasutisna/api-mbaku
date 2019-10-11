@@ -18,9 +18,9 @@ class UserFacade
             $this->doUpdateShowTransFlag($request->memberID);
 
             // convert memberRole to integer
-            foreach ($user as $k) {
+            foreach ($user as $k => $v) {
                 if ($k == 'memberRole') $user['memberRole'] = (int) $user['memberRole'];
-                else $user[$k] = $user[$k];
+                else $user[$k] = $v;
             }
 
             // return data user

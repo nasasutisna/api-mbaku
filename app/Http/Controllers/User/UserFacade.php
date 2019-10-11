@@ -5,16 +5,20 @@ namespace App\Http\Controllers\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
-class UserFacade 
+class UserFacade
 {
-    
-    public function getUserInfo(Request $request) {
+
+    public function getUserInfo(Request $request)
+    {
         try {
             // get user data
             $user = $this->getUserInfoData($request->memberID);
 
             // update flag on table transaction_load
             $this->doUpdateShowTransFlag($request->memberID);
+
+            // convert memberRole to integer
+            $user['memberRole'] = (int) $user['memberRole'];
 
             // return data user
             return $user == null ? [] : $user;
@@ -24,14 +28,15 @@ class UserFacade
         }
     }
 
-    private function getUserInfoData($memberID) {
+    private function getUserInfoData($memberID)
+    {
         return DB::table(DB::raw('(select a.*, b.createdDt transDt, b.isAlreadyAlert isAlreadyAlertTrans from member a 
             left join (select * from transaction_loan order by createdDt desc limit 1) b on a.memberID=b.memberID
             left join member_premium c on a.memberID=c.memberID) x'))->where('memberID', '=', $memberID)->first();
     }
 
-    private function doUpdateShowTransFlag($memberID) {
+    private function doUpdateShowTransFlag($memberID)
+    {
         DB::table('transaction_loan')->where('memberID', '=', $memberID)->update(['isAlreadyAlert' => true]);
     }
-
 }

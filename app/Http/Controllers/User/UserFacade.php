@@ -18,7 +18,7 @@ class UserFacade
             $this->doUpdateShowTransFlag($request->memberID);
 
             // convert memberRole to integer
-            $user['memberRole'] = (int) $user['memberRole'];
+            $user->memberRole = (int) $user['memberRole'];
 
             // return data user
             return $user == null ? [] : $user;

@@ -27,7 +27,7 @@ class UserFacade
 
     private function getUserInfoData($memberID)
     {
-        return DB::table(DB::raw('(select a.*, b.createdDt transDt, b.isAlreadyAlert isAlreadyAlertTrans, c.memberApproval from member a 
+        return DB::table(DB::raw('(select a.*, b.createdDt transDt, b.isAlreadyAlert isAlreadyAlertTrans, case when c.memberApproval=0 then \'pending\' when c.memberApproval=1 then \'approved\' when c.memberApproval=2 then \'rejected\' else \'\' end memberApprovalText, memberApproval from member a 
             left join (select * from transaction_loan order by createdDt desc limit 1) b on a.memberID=b.memberID
             left join member_premium c on a.memberID=c.memberID) x'))->where('memberID', '=', $memberID)->first();
     }

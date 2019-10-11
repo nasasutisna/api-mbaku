@@ -17,12 +17,6 @@ class UserFacade
             // update flag on table transaction_load
             $this->doUpdateShowTransFlag($request->memberID);
 
-            // convert memberRole to integer
-            foreach ($user as $k => $v) {
-                if ($k == 'memberRole') $user['memberRole'] = (int) $user['memberRole'];
-                else $user[$k] = $v;
-            }
-
             // return data user
             return $user == null ? [] : $user;
         } catch (Exception $e) {

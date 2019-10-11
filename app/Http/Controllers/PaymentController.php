@@ -239,14 +239,10 @@ class PaymentController extends Controller
         $amount = $request->input('gross_amount');
         $paymentStatus = $request->input('transaction_status');
         $paymentType = $request->input('payment_type');
-        $paymentToken = $request->input('payment_token') ? $request->input('payment_token') : $uuid;
+        $paymentToken = $request->input('token') ? $request->input('token') : $request->input('payment_token');
         $saldo = $request->input('saldo') ? $request->input('saldo') : 0;
 
         $content['paymentStatus'] = $paymentStatus;
-
-        print_r($content);
-        print_r($paymentToken);
-        exit();
 
         try {
             DB::table($this->tbl_payment_ebook)->where('paymentToken', $paymentToken)->update($content);

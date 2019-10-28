@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Midtrans;
 
 class MemberController extends Controller
@@ -107,9 +108,10 @@ class MemberController extends Controller
     {
         $memberID = $request->input('memberID');
         $memberPhotoKTP = $request->file('photo');
+        $uuid = Str::uuid();
 
         $date = date('Ymdhis');
-        $fileName = $memberID . '_' . $date . '.' . $memberPhotoKTP->extension();
+        $fileName = $memberID . '_' . $uuid . '.' . $memberPhotoKTP->extension();
         $memberPhotoKTP->storeAs('public/memberPremium/' . $memberID, $fileName);
 
         $data = array(
